@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit 
+	colors="true" 
+	stopOnFailure="false" 
+	bootstrap="E:/Code/_Tools/UniformServer/www/wordpress.dev/wordpress-tests/init.php">
+	<testsuites>
+		<testsuite name="PostSnippets">
+			<file>post-snippets-test.php</file>
+		</testsuite>
+	</testsuites>
+</phpunit>
