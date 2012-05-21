@@ -4,34 +4,32 @@
  *
  * Class to handle the help texts and tabs on the settings screen.
  *
- * @package		Post Snippets
- * @author		Johan Steen <artstorm at gmail dot com>
- * @since		Post Snippets 1.8.9
+ * @package Simple Snippets
+ * @author Johan Steen <artstorm at gmail dot com>
+ * @since 1.0
  */
-class Post_Snippets_Help extends Post_Snippets_Base
-{
+class Simple_Snippets_Help {
 	/**
 	 * Constructor.
 	 *
-	 * @since	Post Snippets 1.8.9
+	 * @since 1.0
 	 * @param	string	The option page to load the help text on
 	 */
-	public function __construct( $option_page )
-	{
+	public function __construct( $option_page ) {
 		// If WordPress is 3.3 or higher, use the new Help API, otherwise call
 		// the old contextual help action.
 		global $wp_version;
-		if ( version_compare($wp_version, '3.3', '>=') ) {
-			add_action( 'load-' . $option_page, array(&$this,'add_help_tabs') );
+		if ( version_compare( $wp_version, '3.3', '>=' ) ) {
+			add_action( 'load-' . $option_page, array( &$this,'add_help_tabs' ) );
 		} else {
-			add_action( 'contextual_help', array(&$this,'add_help'), 10, 3 );
+			add_action( 'contextual_help', array( &$this,'add_help' ), 10, 3 );
 		}
 	}
 
 	/**
 	 * Setup the help tabs and sidebar.
 	 *
-	 * @since	Post Snippets 1.8.9
+	 * @since 1.0
 	 */
 	public function add_help_tabs() {
 		$screen = get_current_screen();
@@ -61,11 +59,10 @@ class Post_Snippets_Help extends Post_Snippets_Base
 	/**
 	 * The right sidebar help text.
 	 * 
-	 * @since	Post Snippets 1.8.9
+	 * @since 1.0
 	 * @return	string	The help text
 	 */
-	public function help_sidebar()
-	{
+	public function help_sidebar() {
 		return '<p><strong>'.
 		__( 'For more information:', 'post-snippets' ).
 		'</strong></p>
@@ -82,11 +79,10 @@ class Post_Snippets_Help extends Post_Snippets_Base
 	/**
 	 * The basic help tab.
 	 * 
-	 * @since	Post Snippets 1.9.1
+	 * @since 1.0
 	 * @return	string	The help text
 	 */
-	public function help_basic()
-	{
+	public function help_basic() {
 		return '<h2>'.
 		__( 'Title', 'post-snippets' ).
 		'</h2>
@@ -132,11 +128,10 @@ class Post_Snippets_Help extends Post_Snippets_Base
 	/**
 	 * The shortcode help tab.
 	 * 
-	 * @since	Post Snippets 1.9.1
+	 * @since 1.0
 	 * @return	string	The help text
 	 */
-	public function help_shortcode()
-	{
+	public function help_shortcode() {
 		return '<p>'.
 		__( 'When enabling the shortcode checkbox, the snippet is no longer inserted directly but instead inserted as a shortcode. The obvious advantage of this is of course that you can insert a block of text or code in many places on the site, and update the content from one single place.', 'post-snippets' ).
 		'</p>
@@ -162,11 +157,10 @@ class Post_Snippets_Help extends Post_Snippets_Base
 	/**
 	 * The PHP help tab.
 	 * 
-	 * @since	Post Snippets 1.9.1
+	 * @since 1.0
 	 * @return	string	The help text
 	 */
-	public function help_php()
-	{
+	public function help_php() {
 		return '<p>'.
 		__('Snippets defined as shortcodes can optionally also be evaluated as PHP Code by enabling the PHP checkbox. PHP snippets is only available when treating the snippet as a shortcode.', 'post-snippets' ).
 		'</p>
@@ -196,11 +190,10 @@ class Post_Snippets_Help extends Post_Snippets_Base
 	/**
 	 * The advanced help tab.
 	 * 
-	 * @since	Post Snippets 1.9.1
+	 * @since 1.0
 	 * @return	string	The help text
 	 */
-	public function help_advanced()
-	{
+	public function help_advanced() {
 		return '<p>'.
 		__('You can retrieve a Post Snippet directly from PHP, in a theme for instance, by using the get_post_snippet() function.', 'post-snippets').
 		'</p>
@@ -248,7 +241,7 @@ class Post_Snippets_Help extends Post_Snippets_Base
 	 * Combines the help tabs above into one long help text for the help tab
 	 * when run on WordPress versions before v3.3.
 	 *
-	 * @since		Post Snippets 1.7.1
+	 * @since 1.0
 	 * @return		string		The Contextual Help
 	 */
 	public function add_help($contextual_help, $screen_id, $screen) {

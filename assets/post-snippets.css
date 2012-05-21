@@ -1,8 +1,8 @@
 /**
  * Styling for the jQuery UI dialog used by Post Snippets 
  *
- * @version		2.0
- * @since		Post Snippets 1.7.1
+ * @version 2.0
+ * @since 1.0
  */
 #post-snippets-tabs {
 	/* position: relative prevents IE scroll bug (element with position: relative inside container with overflow: auto appear as "fixed") */

@@ -5,12 +5,11 @@
  * Class that renders out the HTML for the settings screen and contains helpful
  * methods to simply the maintainance of the admin screen.
  *
- * @package		Post Snippets
- * @author		Johan Steen <artstorm at gmail dot com>
- * @since		Post Snippets 1.8.8
+ * @package Simple Snippets
+ * @author Johan Steen <artstorm at gmail dot com>
+ * @since 1.0
  */
-class Post_Snippets_Settings extends Post_Snippets_Base
-{
+class Simple_Snippets_Settings {
 	// -------------------------------------------------------------------------
 	// Handle form submissions
 	// -------------------------------------------------------------------------
@@ -18,40 +17,34 @@ class Post_Snippets_Settings extends Post_Snippets_Base
 	/**
 	 * Add New Snippet.
 	 */
-	private function add()
-	{
-		if (isset( $_POST['add-snippet'] )
-			&& isset( $_POST['update_snippets_nonce'])
-			&& wp_verify_nonce( $_POST['update_snippets_nonce'], 'update_snippets') )
-		{
-			$snippets = get_option( self::PLUGIN_OPTION_KEY );
-			if (empty($snippets)) { $snippets = array(); }
+	private function add() {
+		if ( isset( $_POST['add-snippet'] ) && isset( $_POST['update_snippets_nonce'] ) && wp_verify_nonce( $_POST['update_snippets_nonce'], 'update_snippets' ) ) {
 
-			array_push($snippets, array (
-			    'title' => 'Untitled',
-			    'vars' => '',
-			    'description' => '',
-			    'shortcode' => false,
-			    'php' => false,
-			    'wptexturize' => false,
-			    'snippet' => '')
+			$snippets = get_option( FS_SNIPPETS_OPTION_KEY, array() );
+
+			array_push( $snippets, array (
+				'title'       => 'Untitled',
+				'vars'        => '',
+				'description' => '',
+				'shortcode'   => false,
+				'php'         => false,
+				'wptexturize' => false,
+				'snippet'     => '')
 			);
 
-			update_option( self::PLUGIN_OPTION_KEY, $snippets );
+			update_option( FS_SNIPPETS_OPTION_KEY, $snippets );
+
 			$this->message( __( 'A snippet named Untitled has been added.', 'post-snippets' ) );
+
 		}
 	}
 
 	/**
 	 * Delete Snippet/s.
 	 */
-	private function delete()
-	{
-		if (isset( $_POST['delete-snippets'] )
-			&& isset( $_POST['update_snippets_nonce'])
-			&& wp_verify_nonce( $_POST['update_snippets_nonce'], 'update_snippets') )
-		{
-			$snippets = get_option( self::PLUGIN_OPTION_KEY );
+	private function delete() {
+		if (isset( $_POST['delete-snippets'] ) && isset( $_POST['update_snippets_nonce'] ) && wp_verify_nonce( $_POST['update_snippets_nonce'], 'update_snippets') ) {
+			$snippets = get_option( FS_SNIPPETS_OPTION_KEY );
 
 			if ( empty($snippets) || !isset($_POST['checked']) ) {
 				$this->message( __( 'Nothing selected to delete.', 'post-snippets' ) );
@@ -66,7 +59,7 @@ class Post_Snippets_Settings extends Post_Snippets_Base
 				}
 			}
 
-			update_option( self::PLUGIN_OPTION_KEY, $newsnippets );
+			update_option( FS_SNIPPETS_OPTION_KEY, $newsnippets );
 			$this->message( __( 'Selected snippets have been deleted.', 'post-snippets' ) );
 		}
 	}
@@ -74,13 +67,9 @@ class Post_Snippets_Settings extends Post_Snippets_Base
 	/**
 	 * Update Snippet/s.
 	 */
-	private function update()
-	{
-		if (isset( $_POST['update-snippets'] )
-			&& isset( $_POST['update_snippets_nonce'])
-			&& wp_verify_nonce( $_POST['update_snippets_nonce'], 'update_snippets') )
-		{
-			$snippets = get_option( self::PLUGIN_OPTION_KEY );
+	private function update() {
+		if (isset( $_POST['update-snippets'] ) && isset( $_POST['update_snippets_nonce'] ) && wp_verify_nonce( $_POST['update_snippets_nonce'], 'update_snippets') ) {
+			$snippets = get_option( FS_SNIPPETS_OPTION_KEY );
 			if (!empty($snippets)) {
 				foreach ($snippets as $key => $value) {
 					$new_snippets[$key]['title'] = trim($_POST[$key.'_title']);
@@ -92,7 +81,7 @@ class Post_Snippets_Settings extends Post_Snippets_Base
 					$new_snippets[$key]['snippet'] = wp_specialchars_decode( trim(stripslashes($_POST[$key.'_snippet'])), ENT_NOQUOTES);
 					$new_snippets[$key]['description'] = wp_specialchars_decode( trim(stripslashes($_POST[$key.'_description'])), ENT_NOQUOTES);
 				}
-				update_option( self::PLUGIN_OPTION_KEY, $new_snippets );
+				update_option( FS_SNIPPETS_OPTION_KEY, $new_snippets );
 				$this->message( __( 'Snippets have been updated.', 'post-snippets' ) );
 			}
 		}
@@ -103,15 +92,13 @@ class Post_Snippets_Settings extends Post_Snippets_Base
 	 *
 	 * Sets the per user option for the read-only overview page.
 	 *
-	 * @since	Post Snippets 1.9.7
+	 * @since 1.0
 	 */
-	private function set_user_options()
-	{
-		if ( isset($_POST['post_snippets_user_nonce']) && wp_verify_nonce( $_POST['post_snippets_user_nonce'], 'post_snippets_user_options') )
-		{
+	private function set_user_options() {
+		if ( isset($_POST['post_snippets_user_nonce']) && wp_verify_nonce( $_POST['post_snippets_user_nonce'], 'post_snippets_user_options') ) {
 			$id = get_current_user_id();
 			$render = isset( $_POST['render'] ) ? true : false;
-			update_user_meta( $id, self::USER_OPTION_KEY, $render );
+			update_user_meta( $id, FS_SNIPPETS_OPTION_KEY, $render );
 		}
 	}
 
@@ -120,13 +107,12 @@ class Post_Snippets_Settings extends Post_Snippets_Base
 	 *
 	 * Gets the per user option for the read-only overview page.
 	 *
-	 * @since	Post Snippets 1.9.7
+	 * @since 1.0
 	 * @return	boolean	If overview should be rendered on output or not
 	 */
-	private function get_user_options()
-	{
+	private function get_user_options() {
 		$id = get_current_user_id();
-		$options = get_user_meta( $id, self::USER_OPTION_KEY, true ); 
+		$options = get_user_meta( $id, FS_SNIPPETS_OPTION_KEY, true ); 
 		return $options;
 	}
 
@@ -138,16 +124,14 @@ class Post_Snippets_Settings extends Post_Snippets_Base
 	/**
 	 * Render the options page.
 	 *
-	 * @since	Post Snippets 1.9.7
+	 * @since 1.0
 	 * @param	string	$page	Admin page to render. Default: options
 	 */
-	public function render( $page )
-	{
-		switch ( $page ) {
+	public function render( $page ) {
+		switch( $page ) {
 			case 'options':
 				$this->options_page();
 				break;
-			
 			default:
 				$this->overview_page();
 				break;
@@ -159,8 +143,7 @@ class Post_Snippets_Settings extends Post_Snippets_Base
 	 *
 	 * @param	string	$message	Message to display to the user.
 	 */
-	private function message( $message )
-	{
+	private function message( $message ) {
 		if ( $message )
 			echo "<div class='updated'><p><strong>{$message}</strong></p></div>";
 	}
@@ -170,10 +153,9 @@ class Post_Snippets_Settings extends Post_Snippets_Base
 	 *
 	 * For users with manage_options capability (admin, super admin).
 	 *
-	 * @since	Post Snippets 1.8.8
+	 * @since 1.0
 	 */
-	private function options_page()
-	{
+	private function options_page() {
 		// Handle Form Submits
 		$this->add();
 		$this->delete();
@@ -181,27 +163,72 @@ class Post_Snippets_Settings extends Post_Snippets_Base
 
 		// Header
 		echo '<div class="wrap">';
-		echo '<h2>Post Snippets</h2>';
+		echo '<h2>' . __( 'Manage Snippets', 'post-snippets' ) . '</h2>';
 
-		// Tabs
-		$active_tab = isset( $_GET[ 'tab' ] ) ? $_GET[ 'tab' ] : 'snippets';
-		$base_url = '?page=post-snippets/post-snippets.php&amp;tab=';
-		$tabs = array( 'snippets' => __( 'Manage Snippets', 'post-snippets' ), 'tools' => __( 'Import/Export', 'post-snippets' ) );
-		echo '<h2 class="nav-tab-wrapper">';
-		foreach ( $tabs as $tab => $title ) {
-			$active = ( $active_tab == $tab ) ? ' nav-tab-active' : '';
-			echo "<a href='{$base_url}{$tab}' class='nav-tab {$active}'>{$title}</a>";
-		}
-		echo '</h2>';
 		echo '<p class="description">';
 		_e( 'Use the help dropdown button for additional information.', 'post-snippets' );
 		echo '</p>';
 
-		// Tab content
-		if( $active_tab == 'snippets' )
-			$this->tab_snippets();
-		else
-			$this->tab_tools();
+		echo '<form method="post" action="">';
+		wp_nonce_field( 'update_snippets', 'update_snippets_nonce' );
+?>
+
+<table class="widefat fixed" cellspacing="0">
+	<thead>
+		<tr>
+			<th scope="col" class="check-column"><input type="checkbox" /></th>
+			<th scope="col" style="width: 180px;"><?php _e( 'Title', 'post-snippets' ) ?></th>
+			<th scope="col" style="width: 180px;"><?php _e( 'Variables', 'post-snippets' ) ?></th>
+			<th scope="col"><?php _e( 'Snippet', 'post-snippets' ) ?></th>
+		</tr>
+	</thead>
+
+	<tfoot>
+		<tr>
+			<th scope="col" class="check-column"><input type="checkbox" /></th>
+			<th scope="col"><?php _e( 'Title', 'post-snippets' ) ?></th>
+			<th scope="col"><?php _e( 'Variables', 'post-snippets' ) ?></th>
+			<th scope="col"><?php _e( 'Snippet', 'post-snippets' ) ?></th>
+		</tr>
+	</tfoot>
+
+	<tbody> <?php 
+	$snippets = get_option( FS_SNIPPETS_OPTION_KEY );
+	if ( ! empty( $snippets ) ) {
+		foreach ($snippets as $key => $snippet) { ?>
+			<tr class='recent'>
+				<th scope='row' class='check-column'><input type='checkbox' name='checked[]' value='<?php echo $key; ?>' /></th>
+				<td class='row-title'>
+					<input type='text' name='<?php echo $key; ?>_title' value='<?php echo $snippet['title']; ?>' />
+				</td>
+				<td class='name'>
+					<input type='text' name='<?php echo $key; ?>_vars' value='<?php echo $snippet['vars']; ?>' /><br/><br/>
+					<?php $this->checkbox( __( 'Shortcode', 'post-snippets'), $key.'_shortcode', $snippet['shortcode'] );
+
+					echo '<br/><strong>Shortcode Options:</strong><br/>';
+
+					$wptexturize = isset( $snippet['wptexturize'] ) ? $snippet['wptexturize'] : false;
+					$this->checkbox('wptexturize', $key.'_wptexturize',	$wptexturize );
+				?>
+			</td>
+			<td class='desc'>
+				<textarea name="<?php echo $key; ?>_snippet" class="large-text" style='width: 100%;' rows="5"><?php echo htmlspecialchars($snippet['snippet'], ENT_NOQUOTES); ?></textarea>
+				<?php _e( 'Description', 'post-snippets' ) ?>:
+				<input type='text' style='width: 100%;' name='<?php echo $key; ?>_description' value='<?php if (isset( $snippet['description'] ) ) echo esc_html($snippet['description']); ?>' /><br/>
+			</td>
+		</tr>
+		<?php
+	}
+}
+?>
+	</tbody>
+</table>
+
+<?php
+		$this->submit( 'update-snippets', __('Update Snippets', 'post-snippets') );
+		$this->submit( 'add-snippet', __('Add New Snippet', 'post-snippets'), 'button-secondary', false );
+		$this->submit( 'delete-snippets', __('Delete Selected', 'post-snippets'), 'button-secondary', false );
+		echo '</form>';
 
 		// Close it
 		echo '</div>';
@@ -210,103 +237,9 @@ class Post_Snippets_Settings extends Post_Snippets_Base
 	/**
 	 * Tab to Manage Snippets.
 	 *
-	 * @since	Post Snippets 2.0
+	 * @since 1.0
 	 */
-	private function tab_snippets()
-	{
-		echo '<form method="post" action="">';
-		wp_nonce_field( 'update_snippets', 'update_snippets_nonce' );
-?>
-
-    <table class="widefat fixed" cellspacing="0">
-        <thead>
-        <tr>
-            <th scope="col" class="check-column"><input type="checkbox" /></th>
-            <th scope="col" style="width: 180px;"><?php _e( 'Title', 'post-snippets' ) ?></th>
-            <th scope="col" style="width: 180px;"><?php _e( 'Variables', 'post-snippets' ) ?></th>
-            <th scope="col"><?php _e( 'Snippet', 'post-snippets' ) ?></th>
-        </tr>
-        </thead>
-    
-        <tfoot>
-        <tr>
-            <th scope="col" class="check-column"><input type="checkbox" /></th>
-            <th scope="col"><?php _e( 'Title', 'post-snippets' ) ?></th>
-            <th scope="col"><?php _e( 'Variables', 'post-snippets' ) ?></th>
-            <th scope="col"><?php _e( 'Snippet', 'post-snippets' ) ?></th>
-        </tr>
-        </tfoot>
-    
-        <tbody>
-		<?php 
-		$snippets = get_option( self::PLUGIN_OPTION_KEY );
-		if (!empty($snippets)) {
-			foreach ($snippets as $key => $snippet) {
-			?>
-			<tr class='recent'>
-			<th scope='row' class='check-column'><input type='checkbox' name='checked[]' value='<?php echo $key; ?>' /></th>
-			<td class='row-title'>
-			<input type='text' name='<?php echo $key; ?>_title' value='<?php echo $snippet['title']; ?>' />
-			</td>
-			<td class='name'>
-			<input type='text' name='<?php echo $key; ?>_vars' value='<?php echo $snippet['vars']; ?>' />
-			<br/>
-			<br/>
-			<?php
-			$this->checkbox(__('Shortcode', 'post-snippets'), $key.'_shortcode',
-							$snippet['shortcode']);
-
-			echo '<br/><strong>Shortcode Options:</strong><br/>';
-
-			$this->checkbox(__('PHP Code', 'post-snippets'), $key.'_php',
-							$snippet['php']);
-
-			$wptexturize = isset( $snippet['wptexturize'] ) ? $snippet['wptexturize'] : false;
-			$this->checkbox('wptexturize', $key.'_wptexturize',	$wptexturize);
-			?>
-			</td>
-			<td class='desc'>
-			<textarea name="<?php echo $key; ?>_snippet" class="large-text" style='width: 100%;' rows="5"><?php echo htmlspecialchars($snippet['snippet'], ENT_NOQUOTES); ?></textarea>
-			<?php _e( 'Description', 'post-snippets' ) ?>:
-			<input type='text' style='width: 100%;' name='<?php echo $key; ?>_description' value='<?php if (isset( $snippet['description'] ) ) echo esc_html($snippet['description']); ?>' /><br/>
-			</td>
-			</tr>
-		<?php
-			}
-		}
-		?>
-		</tbody>
-	</table>
-
-<?php
-		$this->submit( 'update-snippets', __('Update Snippets', 'post-snippets') );
-		$this->submit( 'add-snippet', __('Add New Snippet', 'post-snippets'), 'button-secondary', false );
-		$this->submit( 'delete-snippets', __('Delete Selected', 'post-snippets'), 'button-secondary', false );
-		echo '</form>';
-	}
-
-	/**
-	 * Tab for Import/Export
-	 *
-	 * @since	Post Snippets 2.0
-	 */
-	private function tab_tools()
-	{
-		$ie = new Post_Snippets_ImportExport();
-
-		// Create header and export html form
-		printf( "<h3>%s</h3>", __( 'Import/Export', 'post-snippets' ));
-		printf( "<h4>%s</h4>", __( 'Export', 'post-snippets' ));
-		echo '<form method="post">';
-		echo '<p>';
-		_e( 'Export your snippets for backup or to import them on another site.', 'post-snippets' );
-		echo '</p>';
-		printf("<input type='submit' class='button' name='postsnippets_export' value='%s' />", __( 'Export Snippets', 'post-snippets') );
-		echo '</form>';
-
-		// Export logic, and import html form and logic
-		$ie->export_snippets();
-		echo $ie->import_snippets();
+	private function tab_snippets() {
 	}
 
 
@@ -316,10 +249,9 @@ class Post_Snippets_Settings extends Post_Snippets_Base
 	 * For users with edit_posts capability but without manage_options 
 	 * capability.
 	 *
-	 * @since	Post Snippets 1.9.7
+	 * @since 1.0
 	 */
-	private function overview_page()
-	{
+	private function overview_page() {
 		// Header
 		echo '<div class="wrap">';
 		echo '<h2>Post Snippets</h2>';
@@ -339,7 +271,7 @@ class Post_Snippets_Settings extends Post_Snippets_Base
 		echo '</form>';
 
 		// Snippet List
-		$snippets = get_option( self::PLUGIN_OPTION_KEY );
+		$snippets = get_option( FS_SNIPPETS_OPTION_KEY );
 		if (!empty($snippets)) {
 			foreach ($snippets as $key => $snippet) {
 
@@ -394,8 +326,7 @@ class Post_Snippets_Settings extends Post_Snippets_Base
 	 * @param	string	$name		The unique name and id to identify the input
 	 * @param	boolean	$checked	If the input is checked or not
 	 */
-	private function checkbox( $label, $name, $checked )
-	{
+	private function checkbox( $label, $name, $checked ) {
 		echo "<label for=\"{$name}\">";
 		printf( '<input type="checkbox" name="%1$s" id="%1$s" value="true"', $name );
 		if ($checked)
@@ -409,14 +340,13 @@ class Post_Snippets_Settings extends Post_Snippets_Base
 	 *
 	 * Renders the HTML for a submit button.
 	 *
-	 * @since	Post Snippets 1.9.7
+	 * @since 1.0
 	 * @param	string	$name	The name that identifies the button on submit
 	 * @param	string	$label	The label rendered on the button
 	 * @param	string	$class	Optional. Button class. Default: button-primary
 	 * @param	boolean	$wrap	Optional. Wrap in a submit div. Default: true
 	 */
-	private function submit( $name, $label, $class='button-primary', $wrap=true )
-	{
+	private function submit( $name, $label, $class='button-primary', $wrap=true ) {
 		$btn = sprintf( '<input type="submit" name="%s" value="%s" class="%s" />', $name, $label, $class );
 
 		if ($wrap)
