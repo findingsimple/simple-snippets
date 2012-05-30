@@ -44,16 +44,6 @@ class Simple_Snippets_Help {
 			'title'   => __( 'Shortcode', 'post-snippets' ),
 			'content' => $this->help_shortcode()
 		) );
-		$screen->add_help_tab( array(
-			'id'      => 'php-plugin-help',
-			'title'   => __( 'PHP', 'post-snippets' ),
-			'content' => $this->help_php()
-		) );
-		$screen->add_help_tab( array(
-			'id'      => 'advanced-plugin-help',
-			'title'   => __( 'Advanced', 'post-snippets' ),
-			'content' => $this->help_advanced()
-		) );
 	}
 
 	/**
@@ -146,90 +136,10 @@ class Simple_Snippets_Help {
 		<h2>'
 		. __( 'Options', 'post-snippets' ).
 		'</h2>
-		<p><strong>PHP</strong><br/>'.
-		__( 'See the dedicated help section for information about PHP shortcodes.', 'post-snippets' ).
-		'</p>
 		<p><strong>wptexturize</strong><br/>'.
 		sprintf(__( 'Before the shortcode is outputted, it can optionally be formatted with %s, to transform quotes to smart quotes, apostrophes, dashes, ellipses, the trademark symbol, and the multiplication symbol.', 'post-snippets' ), '<a href="http://codex.wordpress.org/Function_Reference/wptexturize">wptexturize</a>' ).
 		'</p>';
 	}
-
-	/**
-	 * The PHP help tab.
-	 * 
-	 * @since 1.0
-	 * @return	string	The help text
-	 */
-	public function help_php() {
-		return '<p>'.
-		__('Snippets defined as shortcodes can optionally also be evaluated as PHP Code by enabling the PHP checkbox. PHP snippets is only available when treating the snippet as a shortcode.', 'post-snippets' ).
-		'</p>
-		<p><strong>'.
-		__( 'Example PHP Snippet', 'post-snippets' ).
-		'</strong><br/>
-		<code>
-		for ($i=1; $i<5; $i++) {<br/>
-			echo "{loop_me}&lt;br/&gt;";<br/>
-		};
-		</code></p>
-
-		<p>'.
-		__( 'With a snippet defined like the one above, you can call it with its shortcode definition in a post. Let\'s pretend that the example snippet is named phpcode and have one variable defined loop_me, then it would be called like this from a post:' , 'post-snippets' ).
-		'</p>
-
-		<code>[phpcode loop_me="post snippet with PHP!"]</code>
-
-		<p>'.
-		__( 'When the shortcode is executed the loop_me variable will be replaced with the string supplied in the shortcode and then the PHP code will be evaluated. (Outputting the string five times in this case. Wow!)', 'post-snippets' ).
-		'</p>
-		<p>'.
-		__( 'Note the evaluation order, any snippet variables will be replaced before the snippet is evaluated as PHP code. Also note that a PHP snippet don\'t need to be wrapped in &lt;?php #code; ?&gt;.', 'post-snippets' ).
-		'</p>';
-	}
-
-	/**
-	 * The advanced help tab.
-	 * 
-	 * @since 1.0
-	 * @return	string	The help text
-	 */
-	public function help_advanced() {
-		return '<p>'.
-		__('You can retrieve a Post Snippet directly from PHP, in a theme for instance, by using the get_post_snippet() function.', 'post-snippets').
-		'</p>
-
-		<h2>'.
-		__('Usage', 'post-snippets').
-		'</h2>
-		<p>'.
-		'<code>
-		&lt;?php $my_snippet = get_post_snippet( $snippet_name, $snippet_vars ); ?&gt;
-		</code></p>
-
-		<h2>'.
-		__('Parameters', 'post-snippets').
-		'</h2>
-		<p>
-		<code>$snippet_name</code><br/>'.
-		__('(string) (required) The name of the snippet to retrieve.', 'post-snippets').
-
-		'<br/><br/><code>'.
-		'$snippet_vars
-		</code><br/>'.
-		__('(string) The variables to pass to the snippet, formatted as a query string.', 'post-snippets').
-		'</p>
-
-		<h2>'.
-		__('Example', 'post-snippets').
-		'</h2>
-		<p><code>
-		&lt;?php<br/>
-			$my_snippet = get_post_snippet( \'internal-link\', \'title=Awesome&url=2011/02/awesome/\' );<br/>
-			echo $my_snippet;<br/>
-		?&gt;
-		</code></p>';
-	}
-
 
 	// -------------------------------------------------------------------------
 	// For compability with WordPress before v3.3.
@@ -250,10 +160,6 @@ class Simple_Snippets_Help {
 			$contextual_help .= $this->help_basic();
 			$contextual_help .= '<h1>'.__( 'Shortcode', 'post-snippets' ).'</h1>';
 			$contextual_help .= $this->help_shortcode();
-			$contextual_help .= '<h1>'.__( 'PHP', 'post-snippets' ).'</h1>';
-			$contextual_help .= $this->help_php();
-			$contextual_help .= '<h1>'.__( 'Advanced', 'post-snippets' ).'</h1>';
-			$contextual_help .= $this->help_advanced();
 		}
 		return $contextual_help;
 	}
