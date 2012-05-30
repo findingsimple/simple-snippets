@@ -37,11 +37,6 @@ class Simple_Snippets {
 		add_action( 'admin_head', array(&$this,'jquery_ui_dialog') );
 		add_action( 'admin_footer', array(&$this,'add_jquery_ui_dialog') );
 		
-		// Add Editor QuickTag button:
-		// IF WordPress is 3.3 or higher, use the new refactored method to add
-		// the quicktag button.
-		// Start showing a deprecated message from version 1.9 of the plugin for
-		// the old method. And remove it completely when the plugin hits 2.0.
 		global $wp_version;
 		if ( version_compare($wp_version, '3.3', '>=') ) {
 			add_action( 'admin_print_footer_scripts', 
@@ -164,7 +159,7 @@ class Simple_Snippets {
 				return;
 		}
 
-		echo "\n<!-- START: Add QuickTag button for Post Snippets -->\n";
+		echo "\n<!-- START: Add QuickTag button for Snippets -->\n";
 		?>
 		<script type="text/javascript" charset="utf-8">
 			QTags.addButton( 'post_snippets_id', 'Snippets', qt_post_snippets );
@@ -473,11 +468,21 @@ function edOpenPostSnippets(myField) {
 			foreach ($snippets as $snippet) {
 				// If shortcode is enabled for the snippet, and a snippet has been entered, register it as a shortcode.
 				if ( $snippet['shortcode'] && !empty($snippet['snippet']) ) {
-					
+
 					$vars = explode(",",$snippet['vars']);
+
 					$vars_str = '';
-					foreach ($vars as $var) {
-						$vars_str = $vars_str . '"'.$var.'" => "",';
+
+					foreach ( $vars as $var ) {
+						if ( strpos( $var, '=' ) !== false ) {
+							$var_and_key = split( '=', $var );
+							$key = $var_and_key[0];
+							$var = $var_and_key[1];
+						} else {
+							$key = $var;
+							$var = '';
+						}
+						$vars_str = $vars_str . '"'.$key.'" => "'.$var.'",';
 					}
 
 					// Get the wptexturize setting
@@ -485,27 +490,20 @@ function edOpenPostSnippets(myField) {
 
 					add_shortcode($snippet['title'], create_function('$atts,$content=null', 
 								'$shortcode_symbols = array('.$vars_str.');
+
 								extract(shortcode_atts($shortcode_symbols, $atts));
-								
+
 								$attributes = compact( array_keys($shortcode_symbols) );
-								
+
 								// Add enclosed content if available to the attributes array
 								if ( $content != null )
 									$attributes["content"] = $content;
-								
 
 								$snippet = \''. addslashes($snippet["snippet"]) .'\';
 								$snippet = str_replace("&", "&amp;", $snippet);
 
-								foreach ($attributes as $key => $val) {
+								foreach ($attributes as $key => $val)
 									$snippet = str_replace("{".$key."}", $val, $snippet);
-								}
-
-								// Handle PHP shortcodes
-								$php = "'. $snippet["php"] .'";
-								if ($php == true) {
-									$snippet = Simple_Snippets::php_eval( $snippet );
-								}
 
 								// Strip escaping and execute nested shortcodes
 								$snippet = do_shortcode(stripslashes($snippet));
@@ -520,23 +518,6 @@ function edOpenPostSnippets(myField) {
 				}
 			}
 		}
-	}
-
-	/**
-	 * Evaluate a snippet as PHP code.
-	 *
-	 * @since 1.0
-	 * @param	string	$content	The snippet to evaluate
-	 * @return	string				The result of the evaluation
-	 */
-	public static function php_eval( $content ) {
-		$content = stripslashes($content);
-
-		ob_start();
-		eval ($content);
-		$content = ob_get_clean();
-
-		return addslashes( $content );
 	}
 
 
