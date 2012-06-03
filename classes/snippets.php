@@ -20,24 +20,23 @@ class Simple_Snippets {
 	 * Initializes the hooks for the plugin
 	 */
 	function init_hooks() {
+		global $wp_version;
 
 		// Add TinyMCE button
 		add_action('init', array(&$this, 'add_tinymce_button') );
 
 		// Settings link on plugins list
 		add_filter( 'plugin_action_links', array(&$this, 'plugin_action_links'), 10, 2 );
-		// Options Page
 		add_action( 'admin_menu', array(&$this,'wp_admin') );
 
 		$this->create_shortcodes();
 
-		// Adds the JS and HTML code in the header and footer for the jQuery
-		// insert UI dialog in the editor
 		add_action( 'admin_init', array(&$this,'enqueue_assets') );
 		add_action( 'admin_head', array(&$this,'jquery_ui_dialog') );
 		add_action( 'admin_footer', array(&$this,'add_jquery_ui_dialog') );
-		
-		global $wp_version;
+
+		add_action( 'init', array( &$this, 'register_post_type' ) );
+
 		if ( version_compare($wp_version, '3.3', '>=') ) {
 			add_action( 'admin_print_footer_scripts', 
 						array(&$this,'add_quicktag_button'), 100 );
@@ -45,6 +44,44 @@ class Simple_Snippets {
 			add_action( 'edit_form_advanced', array(&$this,'add_quicktag_button_pre33') );
 			add_action( 'edit_page_form', array(&$this,'add_quicktag_button_pre33') );
 		}
+	}
+
+	/**
+	 * Registers the Snippet post type
+	 */
+	function register_post_type() {
+		$labels               = array(
+			'name'               => _x( 'Snippets', 'post type general name' ),
+			'singular_name'      => _x( 'Snippet', 'post type singular name' ),
+			'add_new'            => _x( 'Add New', 'book' ),
+			'add_new_item'       => __( 'Add New Snippet' ),
+			'edit_item'          => __( 'Edit Snippet' ),
+			'new_item'           => __( 'New Snippet' ),
+			'all_items'          => __( 'All Snippets' ),
+			'view_item'          => __( 'View Snippet' ),
+			'search_items'       => __( 'Search Snippets' ),
+			'not_found'          => __( 'No snippets found' ),
+			'not_found_in_trash' => __( 'No snippets found in Trash' ), 
+			'parent_item_colon'  => '',
+			'menu_name'          => __( 'Snippets' )
+		);
+
+		$args                 = array(
+			'labels'             => $labels,
+			'public'             => false,
+			'publicly_queryable' => false,
+			'show_ui'            => true, 
+			'show_in_menu'       => true, 
+			'query_var'          => false,
+			'rewrite'            => true,
+			'capability_type'    => 'post',
+			'has_archive'        => true, 
+			'hierarchical'       => false,
+			'menu_position'      => null,
+			'supports'           => array( 'title', 'editor', 'author', 'revisions' )
+		); 
+
+		register_post_type( 'snippet', $args );
 	}
 
 
@@ -162,7 +199,7 @@ class Simple_Snippets {
 		echo "\n<!-- START: Add QuickTag button for Snippets -->\n";
 		?>
 		<script type="text/javascript" charset="utf-8">
-			QTags.addButton( 'post_snippets_id', 'Snippets', qt_post_snippets );
+			QTags.addButton( 'post_snippets_id', 'snippet', qt_post_snippets );
 			function qt_post_snippets() {
 				post_snippets_caller = 'html';
 				jQuery( "#post-snippets-dialog" ).dialog( "open" );
