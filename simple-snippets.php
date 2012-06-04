@@ -4,12 +4,12 @@ Plugin Name: Simple Snippets
 Plugin URI: http://plugins.findingsimple.com
 Description: Build a library of HTML snippets.
 Version: 1.0
-Author: _FindingSimple
+Author: Finding Simple (Jason Conroy & Brent Shepherd)
 Author URI: http://findingsimple.com
 License: GPL2
 */
 /*
-Copyright 2012  Jason Conroy  (email : plugins@findingsimple.com)
+Copyright 2012  Finding Simple  (email : plugins@findingsimple.com)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
