@@ -73,25 +73,62 @@ class Simple_Snippets {
 		global $wp_version;
 
 		// Add TinyMCE button
-		add_action('init', array( &$this, 'add_tinymce_button' ) );
+		add_action( 'init', array( &$this, 'add_tinymce_button' ) );
+
+		add_action( 'init', array( &$this, 'register_post_type' ) );
 
 		$this->create_shortcodes();
 
 		add_action( 'admin_init', array( &$this, 'enqueue_assets' ) );
 		add_action( 'admin_head', array( &$this, 'jquery_ui_dialog' ) );
 		add_action( 'admin_footer', array( &$this, 'add_jquery_ui_dialog' ) );
+		add_action( 'add_meta_boxes', array( &$this, 'add_remove_meta_boxes' ) );
 
-		add_action( 'init', array( &$this, 'register_post_type' ) );
+		add_action( 'admin_print_footer_scripts', array( &$this, 'add_quicktag_button' ), 100 );
 
-		if ( version_compare($wp_version, '3.3', '>=') ) {
-			add_action( 'admin_print_footer_scripts', array( &$this, 'add_quicktag_button' ), 100 );
-		} else {
-			add_action( 'edit_form_advanced', array( &$this, 'add_quicktag_button_pre33' ) );
-			add_action( 'edit_page_form', array( &$this, 'add_quicktag_button_pre33' ) );
-		}
+		add_action( 'save_post', array( &$this, 'save_snippet_variables' ) );
+	}
 
-		error_log("snippets = " . print_r( get_option( FS_SNIPPETS_OPTION_KEY ), true ) );
+	public function save_snippet_variables( $post_id ) {
+		if ( ! current_user_can( 'edit_post', $post_id ) && ! current_user_can( 'edit_page', $post_id ) )
+			return $post_id;
 
+		if ( isset( $_POST['_snippet_variables'] ) )
+			update_post_meta( $post_id, '_snippet_variables', $_POST['_snippet_variables'] );
+
+	}
+
+	/**
+	 * Performs a few metabox related functions for the edit snippet page. 
+	 */
+	public function add_remove_meta_boxes() {
+
+		// Rename the excerpt metabox
+		remove_meta_box( 'postexcerpt', self::POST_TYPE, 'normal' );
+		add_meta_box( 'snippet_description', __( 'Description' ), array( &$this, 'snippet_description_meta_box' ), self::POST_TYPE, 'side', 'core' );
+
+		// Metabox for variables
+		add_meta_box( 'snippet_variables', __( 'Variables' ), array( &$this, 'snippet_variables_meta_box' ), self::POST_TYPE, 'side', 'low' );
+	}
+
+	/**
+	 * Adds the description metabox to the edit snippet page
+	 */
+	public function snippet_description_meta_box( $post ) { ?>
+		<p><?php _e( 'A description for this snippet displayed when adding the snippet to a page/post.' ); ?></p>
+		<label class="screen-reader-text" for="excerpt"><?php _e( 'Description' ) ?></label>
+		<textarea rows="1" cols="40" name="excerpt" tabindex="6" id="excerpt"><?php echo esc_attr( $post->post_excerpt ); ?></textarea>
+	<?php
+	}
+
+	/**
+	 * Adds the variables metabox to the edit snippet page
+	 */
+	public function snippet_variables_meta_box( $post ) { ?>
+		<p><?php _e( 'Add variables in the form var_name="var value". Separate variables with a comma. To use a variable in your snippet, add the variable to your snippet between {}.' ); ?></p>
+		<label class="screen-reader-text" for="_snippet_variables"><?php _e( 'Variables' ) ?></label>
+		<input type="text" name="_snippet_variables" tabindex="8" id="_snippet_variables" value="<?php echo esc_attr( get_post_meta( $post->ID, '_snippet_variables', true ) ); ?>"/>
+	<?php
 	}
 
 	/**
@@ -144,9 +181,7 @@ class Simple_Snippets {
 		wp_enqueue_style( 'wp-jquery-ui-dialog' );
 
 		# Adds the CSS stylesheet for the jQuery UI dialog
-		$style_url = plugins_url( '/assets/post-snippets.css', fs_get_snippet_plugin_file() );
-		wp_register_style( 'post-snippets', $style_url, false, '2.0' );
-		wp_enqueue_style( 'post-snippets' );
+		wp_enqueue_style( 'post-snippets', plugins_url( '/assets/post-snippets.css', fs_get_snippet_plugin_file() ) );
 	}
 	
 
@@ -168,7 +203,7 @@ class Simple_Snippets {
 			return;
 
 		// Add only in Rich Editor mode
-		if ( get_user_option('rich_editing') == 'true') {
+		if ( get_user_option( 'rich_editing' ) == 'true' ) {
 			add_filter( 'mce_external_plugins', array( &$this, 'register_tinymce_plugin' ) );
 			add_filter( 'mce_buttons', array( &$this, 'register_tinymce_button' ) );
 		}
@@ -224,7 +259,7 @@ class Simple_Snippets {
 		// Only run the function on post edit screens
 		if ( function_exists( 'get_current_screen' ) ) {
 			$screen = get_current_screen();
-			if ($screen->base != 'post')
+			if ( $screen->base != 'post')
 				return;
 		}
 
@@ -239,45 +274,6 @@ class Simple_Snippets {
 		</script>
 		<?php
 		echo "\n<!-- END: Add QuickTag button for Post Snippets -->\n";
-	}
-
-
-	/**
-	 * Adds a QuickTag button to the HTML editor.
-	 *
-	 * Used when running on WordPress lower than version 3.3.
-	 *
-	 * @see			wp-includes/js/quicktags.dev.js
-	 * @since 1.0
-	 * @deprecated	Since 1.8.6
-	 */
-	function add_quicktag_button_pre33() {
-		// Only run the function on post edit screens
-		if ( function_exists( 'get_current_screen' ) ) {
-			$screen = get_current_screen();
-			if ($screen->base != 'post')
-				return;
-		}
-
-		echo "\n<!-- START: Post Snippets QuickTag button -->\n";
-		?>
-		<script type="text/javascript" charset="utf-8">
-		// <![CDATA[
-			//edButton(id, display, tagStart, tagEnd, access, open)
-			edbuttonlength = edButtons.length;
-			edButtons[edbuttonlength++] = new edButton('ed_postsnippets', 'Post Snippets', '', '', '', -1);
-		   (function(){
-				  if (typeof jQuery === 'undefined') {
-						 return;
-				  }
-				  jQuery(document).ready(function(){
-						 jQuery("#ed_toolbar").append('<input type="button" value="Post Snippets" id="ed_postsnippets" class="ed_button" onclick="edOpenPostSnippets(edCanvas);" title="Post Snippets" />');
-				  });
-			}());
-		// ]]>
-		</script>
-		<?php
-		echo "\n<!-- END: Post Snippets QuickTag button -->\n";
 	}
 
 
@@ -304,46 +300,28 @@ class Simple_Snippets {
 		# Prepare the snippets and shortcodes into javascript variables
 		# so they can be inserted into the editor, and get the variables replaced
 		# with user defined strings.
-		$snippets = get_option( FS_SNIPPETS_OPTION_KEY );
+		$snippets = $this->get_snippets();
 		foreach ($snippets as $key => $snippet) {
-			if ($snippet['shortcode']) {
-				# Build a long string of the variables, ie: varname1={varname1} varname2={varname2}
-				# so {varnameX} can be replaced at runtime.
-				$var_arr = explode(",",$snippet['vars']);
-				$variables = '';
-				if (!empty($var_arr[0])) {
-					foreach ($var_arr as $var) {
-						// '[test2 yet="{yet}" mupp=per="{mupp=per}" content="{content}"]';
-						$var = $this->strip_default_val( $var );
-
-						$variables .= ' ' . $var . '="{' . $var . '}"';
-					}
+			# Build a long string of the variables, ie: varname1={varname1} varname2={varname2} so {varnameX} can be replaced at runtime.
+			$var_arr = explode( ",", $snippet->variables );
+			$variables = '';
+			if ( ! empty( $var_arr ) ) {
+				foreach ( $var_arr as $var ) {
+					$var = $this->strip_default_val( $var );
+					$variables .= ' ' . $var . '="{' . $var . '}"';
 				}
-				$shortcode = $snippet['title'] . $variables;
-				echo "var postsnippet_{$key} = '[" . $shortcode . "]';\n";
-			} else {
-				// To use $snippet is probably not a good naming convention here.
-				// rename to js_snippet or something?
-				$snippet = $snippet['snippet'];
-				# Fixes for potential collisions:
-				/* Replace <> with char codes, otherwise </script> in a snippet will break it */ 
-				$snippet = str_replace( '<', '\x3C', str_replace( '>', '\x3E', $snippet ) );
-				/* Escape " with \" */
-				$snippet = str_replace( '"', '\"', $snippet );
-				/* Remove CR and replace LF with \n to keep formatting */
-				$snippet = str_replace( chr(13), '', str_replace( chr(10), '\n', $snippet ) );
-				# Print out the variable containing the snippet
-				echo "var postsnippet_{$key} = \"" . $snippet . "\";\n";
 			}
+			$shortcode = $snippet->post_name . $variables;
+			echo "var postsnippet_{$key} = '[" . $shortcode . "]';\n";
 		}
 		?>
 		
 		jQuery(document).ready(function($){
 			<?php
 			# Create js variables for all form fields
-			foreach ($snippets as $key => $snippet) {
-				$var_arr = explode(",",$snippet['vars']);
-				if (!empty($var_arr[0])) {
+			foreach ( $snippets as $key => $snippet ) {
+				$var_arr = explode( ",", $snippet->variables );
+				if ( ! empty( $var_arr ) ) {
 					foreach ($var_arr as $key_2 => $var) {
 						$varname = "var_" . $key . "_" . $key_2;
 						echo "var {$varname} = $( \"#{$varname}\" );\n";
@@ -372,7 +350,7 @@ class Simple_Snippets {
 								if (selected == <?php echo $key; ?>) {
 									insert_snippet = postsnippet_<?php echo $key; ?>;
 									<?php
-									$var_arr = explode(",",$snippet['vars']);
+									$var_arr = explode(",",$snippet->variables);
 									if (!empty($var_arr[0])) {
 										foreach ($var_arr as $key_2 => $var) {
 											$varname = "var_" . $key . "_" . $key_2; ?>
@@ -387,8 +365,7 @@ class Simple_Snippets {
 							}
 							?>
 
-							// Decide what method to use to insert the snippet depending
-							// from what editor the window was opened from
+							// Decide what method to use to insert the snippet depending on which editor the window was opened from
 							if (post_snippets_caller == 'html') {
 								// HTML editor in WordPress 3.3 and greater
 								QTags.insertContent(insert_snippet);
@@ -407,21 +384,10 @@ class Simple_Snippets {
 			});
 		});
 
-// Global variables to keep track on the canvas instance and from what editor
-// that opened the Post Snippets popup.
+// Global variables to keep track on the canvas instance and from what editor that opened the Post Snippets popup.
 var post_snippets_canvas;
 var post_snippets_caller = '';
 
-/**
- * Used in WordPress lower than version 3.3.
- * Not used anymore starting with WordPress version 3.3.
- * Called from: add_quicktag_button_pre33()
- */
-function edOpenPostSnippets(myField) {
-		post_snippets_canvas = myField;
-		post_snippets_caller = 'html_pre33';
-		jQuery( "#post-snippets-dialog" ).dialog( "open" );
-};
 <?php
 		echo "</script>\n";
 		echo "\n<!-- END: Post Snippets jQuery UI and related functions -->\n";
@@ -439,7 +405,7 @@ function edOpenPostSnippets(myField) {
 		// Only run the function on post edit screens
 		if ( function_exists( 'get_current_screen' ) ) {
 			$screen = get_current_screen();
-			if ($screen->base != 'post')
+			if ( $screen->base != 'post' )
 				return;
 		}
 
@@ -452,25 +418,24 @@ function edOpenPostSnippets(myField) {
 		echo "\t\t\t<ul>\n";
 
 		// Create a tab for each available snippet
-		$snippets = get_option( FS_SNIPPETS_OPTION_KEY );
+		$snippets = $this->get_snippets();
 		foreach ($snippets as $key => $snippet) {
 			echo "\t\t\t\t";
-			echo "<li><a href=\"#ps-tabs-{$key}\">{$snippet['title']}</a></li>";
+			echo "<li><a href=\"#ps-tabs-{$key}\">{$snippet->post_title}</a></li>";
 			echo "\n";
 		}
 		echo "\t\t\t</ul>\n";
 
 		// Create a panel with form fields for each available snippet
-		foreach ($snippets as $key => $snippet) {
+		foreach ( $snippets as $key => $snippet ) {
 			echo "\t\t\t<div id=\"ps-tabs-{$key}\">\n";
 
-			// Print a snippet description is available
-			if ( isset($snippet['description']) )
-				echo "\t\t\t\t<p class=\"howto\">" . $snippet['description'] . "</p>\n";
+			// Print a snippet description if available
+			if ( ! empty( $snippet->post_excerpt ) )
+				echo "\t\t\t\t<p class=\"howto\">" . $snippet->post_excerpt . "</p>\n";
 
-			// Get all variables defined for the snippet and output them as
-			// input fields
-			$var_arr = explode(',', $snippet['vars']);
+			// Get all variables defined for the snippet and output them as input fields
+			$var_arr = explode( ',', $snippet->variables );
 			if (!empty($var_arr[0])) {
 				foreach ($var_arr as $key_2 => $var) {
 					// Default value exists?
@@ -478,7 +443,7 @@ function edOpenPostSnippets(myField) {
 					if ( $def_pos !== false ) {
 						$split = explode( '=', $var );
 						$var = $split[0];
-						$def = $split[1];
+						$def = esc_attr( $split[1] );
 					} else {
 						$def = '';
 					}
@@ -489,7 +454,7 @@ function edOpenPostSnippets(myField) {
 			} else {
 				// If no variables and no description available, output a text
 				// to inform the user that it's an insert snippet only.
-				if ( empty($snippet['description']) )
+				if ( empty( $snippet->post_excerpt ) )
 					echo "\t\t\t\t<p class=\"howto\">" . __('This snippet is insert only, no variables defined.', 'post-snippets') . "</p>\n";
 			}
 			echo "\t\t\t</div><!-- #ps-tabs-{$key} -->\n";
@@ -532,13 +497,13 @@ function edOpenPostSnippets(myField) {
 	 * Create the functions for shortcodes dynamically and register them
 	 */
 	function create_shortcodes() {
-		$snippets = get_option( FS_SNIPPETS_OPTION_KEY );
+		$snippets = $this->get_snippets();
 		if (!empty($snippets)) {
 			foreach ($snippets as $snippet) {
 				// If shortcode is enabled for the snippet, and a snippet has been entered, register it as a shortcode.
-				if ( $snippet['shortcode'] && !empty($snippet['snippet']) ) {
+				if ( ! empty( $snippet->post_content ) ) {
 
-					$vars = explode(",",$snippet['vars']);
+					$vars = explode( ",", $snippet->variables );
 
 					$vars_str = '';
 
@@ -546,7 +511,7 @@ function edOpenPostSnippets(myField) {
 						if ( strpos( $var, '=' ) !== false ) {
 							$var_and_key = split( '=', $var );
 							$key = $var_and_key[0];
-							$var = $var_and_key[1];
+							$var = addslashes( $var_and_key[1] );
 						} else {
 							$key = $var;
 							$var = '';
@@ -554,69 +519,30 @@ function edOpenPostSnippets(myField) {
 						$vars_str = $vars_str . '"'.$key.'" => "'.$var.'",';
 					}
 
-					// Get the wptexturize setting
-					$texturize = isset( $snippet["wptexturize"] ) ? $snippet["wptexturize"] : false;
-
-					add_shortcode($snippet['title'], create_function('$atts,$content=null', 
+					add_shortcode( $snippet->post_name, create_function( '$atts, $content=null', 
 								'$shortcode_symbols = array('.$vars_str.');
 
-								extract(shortcode_atts($shortcode_symbols, $atts));
+								extract( shortcode_atts( $shortcode_symbols, $atts ) );
 
-								$attributes = compact( array_keys($shortcode_symbols) );
+								$attributes = compact( array_keys( $shortcode_symbols ) );
 
 								// Add enclosed content if available to the attributes array
 								if ( $content != null )
 									$attributes["content"] = $content;
 
-								$snippet = \''. addslashes($snippet["snippet"]) .'\';
-								$snippet = str_replace("&", "&amp;", $snippet);
+								$snippet = \''. addslashes( wpautop( $snippet->post_content ) ) .'\';
+								$snippet = str_replace( "&", "&amp;", $snippet );
 
-								foreach ($attributes as $key => $val)
-									$snippet = str_replace("{".$key."}", $val, $snippet);
+								foreach ( $attributes as $key => $val )
+									$snippet = str_replace( "{".$key."}", $val, $snippet );
 
 								// Strip escaping and execute nested shortcodes
-								$snippet = do_shortcode(stripslashes($snippet));
-
-								// WPTexturize the Snippet
-								$texturize = "'. $texturize .'";
-								if ($texturize == true) {
-									$snippet = wptexturize( $snippet );
-								}
+								$snippet = do_shortcode( stripslashes( $snippet ) );
 
 								return $snippet;') );
 				}
 			}
 		}
-	}
-
-	/**
-	 * Allow snippets to be retrieved directly from PHP.
-	 *
-	 * @since 1.0
-	 *
-	 * @param	string		$snippet_name
-	 *			The name of the snippet to retrieve
-	 * @param	string		$snippet_vars
-	 *			The variables to pass to the snippet, formatted as a query string.
-	 * @return	string
-	 *			The Snippet
-	 */
-	public function get_snippet( $snippet_name, $snippet_vars = '' ) {
-		$snippets = get_option( FS_SNIPPETS_OPTION_KEY );
-
-		for ( $i = 0; $i < count( $snippets ); $i++ ) {
-			if ( $snippets[$i]['title'] == $snippet_name ) {
-				parse_str( htmlspecialchars_decode( $snippet_vars ), $snippet_output );
-				$snippet = $snippets[$i]['snippet'];
-				$var_arr = explode( ",",$snippets[$i]['vars'] );
-				if ( ! empty( $var_arr[0] ) ) {
-					for ($j = 0; $j < count($var_arr); $j++) {
-						$snippet = str_replace("{".$var_arr[$j]."}", $snippet_output[$var_arr[$j]], $snippet);
-					}
-				}
-			}
-		}
-		return $snippet;
 	}
 
 
@@ -627,15 +553,11 @@ function edOpenPostSnippets(myField) {
 	 * @return array $post_name => $post_content
 	 */
 	public static function get_snippets(){
-		$snippet_posts = get_posts( array( 'post_type' => self::POST_TYPE ) );
-		error_log('$snippet_posts = ' . print_r( $snippet_posts, true ) );
+		$snippets = get_posts( array( 'post_type' => self::POST_TYPE ) );
 
-		$snippets = array();
+		foreach ( $snippets as $key => $snippet )
+			$snippets[$key]->variables = get_post_meta( $snippet->ID, '_snippet_variables', true);
 
-		foreach ( $snippet_posts as $snippet_post )
-			$snippets[$snippet_post->post_name] = $snippet_post->post_content;
-
-		error_log('$snippets = ' . print_r( $snippets, true ) );
 		return $snippets;
 	}
 
