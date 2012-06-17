@@ -1,4 +1,5 @@
 .htaccess
+deploy.sh
 wp-*.php
 xmlrpc.php
 wp-admin/
