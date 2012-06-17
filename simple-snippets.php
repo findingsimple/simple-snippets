@@ -29,30 +29,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  * Based on the Post Snippets plugin by Johan Steen: http://wordpress.org/extend/plugins/post-snippets/
  */
 
-if ( ! defined( 'FS_SNIPPETS_OPTION_KEY' ) )
-	define( 'FS_SNIPPETS_OPTION_KEY', 'simple_snippets' );
-
-if ( is_admin() )
-	require( plugin_dir_path( __FILE__ ) . 'classes/help.php' );
-
-function fs_init_post_snippets(){
-	global $post_snippets;
-
-	$post_snippets = new Simple_Snippets();
-
-}
-add_action( 'plugins_loaded', 'fs_init_post_snippets' );
-
-
-/**
- * Get __FILE__ with no symlinks.
- *
- * @since 1.0
- * @return The __FILE__ constant without resolved symlinks.
- */
-function fs_get_snippet_plugin_file(){
-	return __FILE__;
-}
+if ( ! class_exists( 'Simple_Snippets' ) ) :
 
 /**
  * Plugin Main Class.
@@ -69,27 +46,29 @@ class Simple_Snippets {
 
 	// -------------------------------------------------------------------------
 
-	public function __construct() {
+	public static function init() {
 		global $wp_version;
 
+		if ( is_admin() )
+			require( 'classes/help.php' );
+
 		// Add TinyMCE button
-		add_action( 'init', array( &$this, 'add_tinymce_button' ) );
+		add_action( 'init', array( __CLASS__, 'add_tinymce_button' ) );
+		add_action( 'init', array( __CLASS__, 'register_post_type' ) );
 
-		add_action( 'init', array( &$this, 'register_post_type' ) );
+		self::create_shortcodes();
 
-		$this->create_shortcodes();
+		add_action( 'admin_init', array( __CLASS__, 'enqueue_assets' ) );
+		add_action( 'admin_head', array( __CLASS__, 'jquery_ui_dialog' ) );
+		add_action( 'admin_footer', array( __CLASS__, 'add_jquery_ui_dialog' ) );
+		add_action( 'add_meta_boxes', array( __CLASS__, 'add_remove_meta_boxes' ) );
 
-		add_action( 'admin_init', array( &$this, 'enqueue_assets' ) );
-		add_action( 'admin_head', array( &$this, 'jquery_ui_dialog' ) );
-		add_action( 'admin_footer', array( &$this, 'add_jquery_ui_dialog' ) );
-		add_action( 'add_meta_boxes', array( &$this, 'add_remove_meta_boxes' ) );
+		add_action( 'admin_print_footer_scripts', array( __CLASS__, 'add_quicktag_button' ), 100 );
 
-		add_action( 'admin_print_footer_scripts', array( &$this, 'add_quicktag_button' ), 100 );
-
-		add_action( 'save_post', array( &$this, 'save_snippet_variables' ) );
+		add_action( 'save_post', array( __CLASS__, 'save_snippet_variables' ) );
 	}
 
-	public function save_snippet_variables( $post_id ) {
+	public static function save_snippet_variables( $post_id ) {
 		if ( ! current_user_can( 'edit_post', $post_id ) && ! current_user_can( 'edit_page', $post_id ) )
 			return $post_id;
 
@@ -101,20 +80,20 @@ class Simple_Snippets {
 	/**
 	 * Performs a few metabox related functions for the edit snippet page. 
 	 */
-	public function add_remove_meta_boxes() {
+	public static function add_remove_meta_boxes() {
 
 		// Rename the excerpt metabox
 		remove_meta_box( 'postexcerpt', self::POST_TYPE, 'normal' );
-		add_meta_box( 'snippet_description', __( 'Description' ), array( &$this, 'snippet_description_meta_box' ), self::POST_TYPE, 'side', 'core' );
+		add_meta_box( 'snippet_description', __( 'Description' ), array( __CLASS__, 'snippet_description_meta_box' ), self::POST_TYPE, 'side', 'core' );
 
 		// Metabox for variables
-		add_meta_box( 'snippet_variables', __( 'Variables' ), array( &$this, 'snippet_variables_meta_box' ), self::POST_TYPE, 'side', 'low' );
+		add_meta_box( 'snippet_variables', __( 'Variables' ), array( __CLASS__, 'snippet_variables_meta_box' ), self::POST_TYPE, 'side', 'low' );
 	}
 
 	/**
 	 * Adds the description metabox to the edit snippet page
 	 */
-	public function snippet_description_meta_box( $post ) { ?>
+	public static function snippet_description_meta_box( $post ) { ?>
 		<p><?php _e( 'A description for this snippet displayed when adding the snippet to a page/post.' ); ?></p>
 		<label class="screen-reader-text" for="excerpt"><?php _e( 'Description' ) ?></label>
 		<textarea rows="1" cols="40" name="excerpt" tabindex="6" id="excerpt"><?php echo esc_attr( $post->post_excerpt ); ?></textarea>
@@ -124,7 +103,7 @@ class Simple_Snippets {
 	/**
 	 * Adds the variables metabox to the edit snippet page
 	 */
-	public function snippet_variables_meta_box( $post ) { ?>
+	public static function snippet_variables_meta_box( $post ) { ?>
 		<p><?php _e( 'Add variables in the form var_name="var value". Separate variables with a comma. To use a variable in your snippet, add the variable to your snippet between {}.' ); ?></p>
 		<label class="screen-reader-text" for="_snippet_variables"><?php _e( 'Variables' ) ?></label>
 		<input type="text" name="_snippet_variables" tabindex="8" id="_snippet_variables" value="<?php echo esc_attr( get_post_meta( $post->ID, '_snippet_variables', true ) ); ?>"/>
@@ -134,7 +113,7 @@ class Simple_Snippets {
 	/**
 	 * Registers the Snippet post type
 	 */
-	function register_post_type() {
+	public static function register_post_type() {
 		$labels               = array(
 			'name'               => _x( 'Snippets', 'post type general name' ),
 			'singular_name'      => _x( 'Snippet', 'post type singular name' ),
@@ -181,9 +160,9 @@ class Simple_Snippets {
 		wp_enqueue_style( 'wp-jquery-ui-dialog' );
 
 		# Adds the CSS stylesheet for the jQuery UI dialog
-		wp_enqueue_style( 'post-snippets', plugins_url( '/assets/post-snippets.css', fs_get_snippet_plugin_file() ) );
+		wp_enqueue_style( 'post-snippets', self::get_url( '/assets/post-snippets.css' ) );
 	}
-	
+
 
 	// -------------------------------------------------------------------------
 	// WordPress Editor Buttons
@@ -197,16 +176,18 @@ class Simple_Snippets {
 	 *
 	 * @since 1.0
 	 */
-	public function add_tinymce_button() {
+	public static function add_tinymce_button() {
+
 		// Don't bother doing this stuff if the current user lacks permissions
 		if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'edit_pages' ) )
 			return;
 
 		// Add only in Rich Editor mode
 		if ( get_user_option( 'rich_editing' ) == 'true' ) {
-			add_filter( 'mce_external_plugins', array( &$this, 'register_tinymce_plugin' ) );
-			add_filter( 'mce_buttons', array( &$this, 'register_tinymce_button' ) );
+			add_filter( 'mce_external_plugins', array( __CLASS__, 'register_tinymce_plugin' ) );
+			add_filter( 'mce_buttons', array( __CLASS__, 'register_tinymce_button' ) );
 		}
+
 	}
 
 	/**
@@ -223,7 +204,7 @@ class Simple_Snippets {
 	 * @param	array	$buttons	Filter supplied array of buttons to modify
 	 * @return	array				The modified array with buttons
 	 */
-	public function register_tinymce_button( $buttons ) {
+	public static function register_tinymce_button( $buttons ) {
 		array_push( $buttons, 'separator', self::TINYMCE_PLUGIN_NAME );
 		return $buttons;
 	}
@@ -240,9 +221,9 @@ class Simple_Snippets {
 	 * @param	array	$plugins	Filter supplied array of plugins to modify
 	 * @return	array				The modified array with plugins
 	 */
-	public function register_tinymce_plugin( $plugins ) {
+	public static function register_tinymce_plugin( $plugins ) {
 		// Load the TinyMCE plugin, editor_plugin.js, into the array
-		$plugins[self::TINYMCE_PLUGIN_NAME] = plugins_url( '/tinymce/editor_plugin.js?ver=1.9', fs_get_snippet_plugin_file() );
+		$plugins[self::TINYMCE_PLUGIN_NAME] = self::get_url( '/tinymce/editor_plugin.js?ver=1.9', __FILE__ );
 
 		return $plugins;
 	}
@@ -255,7 +236,7 @@ class Simple_Snippets {
 	 * @see			wp-includes/js/quicktags.dev.js -> qt.addButton()
 	 * @since 1.0
 	 */
-	public function add_quicktag_button() {
+	public static function add_quicktag_button() {
 		// Only run the function on post edit screens
 		if ( function_exists( 'get_current_screen' ) ) {
 			$screen = get_current_screen();
@@ -286,7 +267,7 @@ class Simple_Snippets {
 	 *
 	 * @since 1.0
 	 */
-	public function jquery_ui_dialog() {
+	public static function jquery_ui_dialog() {
 		// Only run the function on post edit screens
 		if ( function_exists( 'get_current_screen' ) ) {
 			$screen = get_current_screen();
@@ -300,14 +281,14 @@ class Simple_Snippets {
 		# Prepare the snippets and shortcodes into javascript variables
 		# so they can be inserted into the editor, and get the variables replaced
 		# with user defined strings.
-		$snippets = $this->get_snippets();
+		$snippets = self::get_snippets();
 		foreach ($snippets as $key => $snippet) {
 			# Build a long string of the variables, ie: varname1={varname1} varname2={varname2} so {varnameX} can be replaced at runtime.
 			$var_arr = explode( ",", $snippet->variables );
 			$variables = '';
 			if ( ! empty( $var_arr ) ) {
 				foreach ( $var_arr as $var ) {
-					$var = $this->strip_default_val( $var );
+					$var = self::strip_default_val( $var );
 					$variables .= ' ' . $var . '="{' . $var . '}"';
 				}
 			}
@@ -354,7 +335,7 @@ class Simple_Snippets {
 									if (!empty($var_arr[0])) {
 										foreach ($var_arr as $key_2 => $var) {
 											$varname = "var_" . $key . "_" . $key_2; ?>
-											insert_snippet = insert_snippet.replace(/\{<?php echo $this->strip_default_val( $var ); ?>\}/g, <?php echo $varname; ?>.val());
+											insert_snippet = insert_snippet.replace(/\{<?php echo self::strip_default_val( $var ); ?>\}/g, <?php echo $varname; ?>.val());
 									<?php
 											echo "\n";
 										}
@@ -401,7 +382,7 @@ var post_snippets_caller = '';
 	 *
 	 * @since 1.0
 	 */
-	public function add_jquery_ui_dialog() {
+	public static function add_jquery_ui_dialog() {
 		// Only run the function on post edit screens
 		if ( function_exists( 'get_current_screen' ) ) {
 			$screen = get_current_screen();
@@ -418,7 +399,7 @@ var post_snippets_caller = '';
 		echo "\t\t\t<ul>\n";
 
 		// Create a tab for each available snippet
-		$snippets = $this->get_snippets();
+		$snippets = self::get_snippets();
 		foreach ($snippets as $key => $snippet) {
 			echo "\t\t\t\t";
 			echo "<li><a href=\"#ps-tabs-{$key}\">{$snippet->post_title}</a></li>";
@@ -478,7 +459,7 @@ var post_snippets_caller = '';
 	 * @param	string	$variable	The variable to check for default value
 	 * @return	string				The variable without any default value
 	 */
-	public function strip_default_val( $variable ) {
+	public static function strip_default_val( $variable ) {
 		// Check if variable contains a default defintion
 		$def_pos = strpos( $variable, '=' );
 
@@ -496,8 +477,8 @@ var post_snippets_caller = '';
 	/**
 	 * Create the functions for shortcodes dynamically and register them
 	 */
-	function create_shortcodes() {
-		$snippets = $this->get_snippets();
+	public static function create_shortcodes() {
+		$snippets = self::get_snippets();
 		if (!empty($snippets)) {
 			foreach ($snippets as $snippet) {
 				// If shortcode is enabled for the snippet, and a snippet has been entered, register it as a shortcode.
@@ -561,4 +542,26 @@ var post_snippets_caller = '';
 		return $snippets;
 	}
 
+	/**
+	 * Helper function to get the URL of a given file. 
+	 * 
+	 * As this plugin may be used as both a stand-alone plugin and as a submodule of 
+	 * a theme, the standard WP API functions, like plugins_url() can not be used. 
+	 *
+	 * @since 1.0
+	 * @return array $post_name => $post_content
+	 */
+	public static function get_url( $file ) {
+
+		// Get the path of this file after the WP content directory
+		$post_content_path = substr( dirname( __FILE__ ), strpos( __FILE__, basename( WP_CONTENT_DIR ) ) + strlen( basename( WP_CONTENT_DIR ) ) );
+
+		// Return a content URL for this path & the specified file
+		return content_url( $post_content_path . $file );
+	}
+
 }
+
+Simple_Snippets::init();
+
+endif;
