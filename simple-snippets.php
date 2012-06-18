@@ -39,18 +39,22 @@ if ( ! class_exists( 'Simple_Snippets' ) ) :
  * @since 1.0
  */
 class Simple_Snippets {
-	// Constants
+
 	const TINYMCE_PLUGIN_NAME = 'post_snippets';
 
-	const POST_TYPE = 'snippet';
+	static $text_domain;
 
-	// -------------------------------------------------------------------------
+	static $post_type_name;
 
 	public static function init() {
 		global $wp_version;
 
 		if ( is_admin() )
 			require( 'classes/help.php' );
+
+		self::$text_domain = apply_filters( 'simple_snippets_text_domain', 'Simple_Snippets' );
+
+		self::$post_type_name = apply_filters( 'simple_snippets_post_type_name', 'snippet' );
 
 		// Add TinyMCE button
 		add_action( 'init', array( __CLASS__, 'add_tinymce_button' ) );
@@ -83,11 +87,11 @@ class Simple_Snippets {
 	public static function add_remove_meta_boxes() {
 
 		// Rename the excerpt metabox
-		remove_meta_box( 'postexcerpt', self::POST_TYPE, 'normal' );
-		add_meta_box( 'snippet_description', __( 'Description' ), array( __CLASS__, 'snippet_description_meta_box' ), self::POST_TYPE, 'side', 'core' );
+		remove_meta_box( 'postexcerpt', self::$post_type_name, 'normal' );
+		add_meta_box( 'snippet_description', __( 'Description' ), array( __CLASS__, 'snippet_description_meta_box' ), self::$post_type_name, 'side', 'core' );
 
 		// Metabox for variables
-		add_meta_box( 'snippet_variables', __( 'Variables' ), array( __CLASS__, 'snippet_variables_meta_box' ), self::POST_TYPE, 'side', 'low' );
+		add_meta_box( 'snippet_variables', __( 'Variables' ), array( __CLASS__, 'snippet_variables_meta_box' ), self::$post_type_name, 'side', 'low' );
 	}
 
 	/**
@@ -104,9 +108,9 @@ class Simple_Snippets {
 	 * Adds the variables metabox to the edit snippet page
 	 */
 	public static function snippet_variables_meta_box( $post ) { ?>
-		<p><?php _e( 'Add variables in the form var_name="var value". Separate variables with a comma. To use a variable in your snippet, add the variable to your snippet between {}.' ); ?></p>
+		<p><?php _e( 'Add variables in the form var_name="var value". Separate variables with a comma. To use a variable in your snippet, add the variable to your snippet between {} e.g. to insert var_one="default_val", insert {var_one}.' ); ?></p>
 		<label class="screen-reader-text" for="_snippet_variables"><?php _e( 'Variables' ) ?></label>
-		<input type="text" name="_snippet_variables" tabindex="8" id="_snippet_variables" value="<?php echo esc_attr( get_post_meta( $post->ID, '_snippet_variables', true ) ); ?>"/>
+		<input type="text" name="_snippet_variables" tabindex="8" id="_snippet_variables" value="<?php echo esc_attr( get_post_meta( $post->ID, '_snippet_variables', true ) ); ?>" style="width: 100%;"/>
 	<?php
 	}
 
@@ -145,7 +149,7 @@ class Simple_Snippets {
 			'supports'           => array( 'title', 'editor', 'author', 'excerpt', 'revisions' )
 		); 
 
-		register_post_type( self::POST_TYPE, $args );
+		register_post_type( self::$post_type_name, $args );
 	}
 
 
@@ -160,7 +164,7 @@ class Simple_Snippets {
 		wp_enqueue_style( 'wp-jquery-ui-dialog' );
 
 		# Adds the CSS stylesheet for the jQuery UI dialog
-		wp_enqueue_style( 'post-snippets', self::get_url( '/assets/post-snippets.css' ) );
+		wp_enqueue_style( 'snippets', self::get_url( '/assets/post-snippets.css' ) );
 	}
 
 
@@ -417,8 +421,8 @@ var post_snippets_caller = '';
 
 			// Get all variables defined for the snippet and output them as input fields
 			$var_arr = explode( ',', $snippet->variables );
-			if (!empty($var_arr[0])) {
-				foreach ($var_arr as $key_2 => $var) {
+			if ( ! empty( $var_arr[0] ) ) {
+				foreach ( $var_arr as $key_2 => $var ) {
 					// Default value exists?
 					$def_pos = strpos( $var, '=' );
 					if ( $def_pos !== false ) {
@@ -433,10 +437,8 @@ var post_snippets_caller = '';
 					echo "\t\t\t\t<br/>\n";
 				}
 			} else {
-				// If no variables and no description available, output a text
-				// to inform the user that it's an insert snippet only.
 				if ( empty( $snippet->post_excerpt ) )
-					echo "\t\t\t\t<p class=\"howto\">" . __('This snippet is insert only, no variables defined.', 'post-snippets') . "</p>\n";
+					echo "\t\t\t\t<p class=\"howto\">" . __( 'No variables are defined for this snippet.', self::$text_domain ) . "</p>\n";
 			}
 			echo "\t\t\t</div><!-- #ps-tabs-{$key} -->\n";
 		}
@@ -534,7 +536,7 @@ var post_snippets_caller = '';
 	 * @return array $post_name => $post_content
 	 */
 	public static function get_snippets(){
-		$snippets = get_posts( array( 'post_type' => self::POST_TYPE ) );
+		$snippets = get_posts( array( 'post_type' => self::$post_type_name ) );
 
 		foreach ( $snippets as $key => $snippet )
 			$snippets[$key]->variables = get_post_meta( $snippet->ID, '_snippet_variables', true);
