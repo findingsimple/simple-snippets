@@ -11,53 +11,87 @@
 	zoom: 1; 
 }
 #post-snippets-tabs .ui-tabs-nav {
-	margin: 0;
-	padding: .2em .2em 0;
-
-	/* Overrides */
-	background-color: #f9f9f9;
-	border-bottom: 1px solid #dfdfdf;
-	padding-bottom: 1px;
+	list-style: none;
+	margin: 1em 0 0;
+	padding: 0;
+	line-height: 24px;
+	position: relative;
 }
 
 #post-snippets-tabs .ui-tabs-nav li {
-	list-style: none;
-	float: left;
+	margin: 0 0 0 8px;
+	padding: 0 8px;
+	border: 1px solid #AAA;
+	background: #ECECEC;
+	display: inline-block;
 	position: relative;
-	top: 1px;
-	margin: 0 .2em 1px 0;
-	border-bottom: 0 !important;
-	padding: 0;
-	white-space: nowrap;
+	z-index: 0;
+	border-top-left-radius: 6px;
+	border-top-right-radius: 6px;
 }
-#post-snippets-tabs .ui-tabs-nav li a {
-	float: left;
-	padding: .5em 1em;
-	text-decoration: none;
 
-	/* Overrides */
-	border: 1px solid #dfdfdf;
-	-webkit-border-radius: 3px;
-	border-radius: 3px;
-}
 #post-snippets-tabs .ui-tabs-nav li.ui-tabs-selected {
-	margin-bottom: 0;
-	padding-bottom: 1px;
-
-	/* Overrides */
-	background-color: #fff;
-	padding-bottom: 0;
+	background: #FFF;
+	color: #000;
+	z-index: 2;
+	border-bottom-color: #FFF;
 }
+#post-snippets-tabs .ui-tabs-nav:before {
+	position: absolute;
+	content: "";
+	width: 100%;
+	bottom: 0;
+	left: 0;
+	border-bottom: 1px solid #AAA;
+	z-index: 1;
+}
+
+#post-snippets-tabs .ui-tabs-nav li:before,
+#post-snippets-tabs .ui-tabs-nav li:after {
+	position: absolute;
+	bottom: -1px;
+	width: 4px;
+	height: 4px;
+	content: " ";
+}
+#post-snippets-tabs .ui-tabs-nav li:after, 
+#post-snippets-tabs .ui-tabs-nav li:before {
+    border: 1px solid #AAA;
+}
+#post-snippets-tabs .ui-tabs-nav li:before {
+	left: -5px;
+	border-bottom-right-radius: 6px;
+	border-width: 0 1px 1px 0;
+	box-shadow: 2px 2px 0 #ECECEC;
+}
+#post-snippets-tabs .ui-tabs-nav li:after {
+	right: -5px;
+	border-bottom-left-radius: 6px;
+	border-width: 0 0 1px 1px;
+	box-shadow: -2px 2px 0 #ECECEC;
+}
+#post-snippets-tabs .ui-tabs-nav li.ui-tabs-selected:before {
+    box-shadow: 2px 2px 0 #FFF;
+}
+#post-snippets-tabs .ui-tabs-nav li.ui-tabs-selected:after {
+    box-shadow: -2px 2px 0 #FFF;
+}
+
+#post-snippets-tabs .ui-tabs-nav li a {
+	text-decoration: none;
+}
+
 #post-snippets-tabs .ui-tabs-nav li.ui-tabs-selected a,
 #post-snippets-tabs .ui-tabs-nav li.ui-state-disabled a,
 #post-snippets-tabs .ui-tabs-nav li.ui-state-processing a {
-	cursor: text;
+	cursor: pointer;
 }
 #post-snippets-tabs .ui-tabs-nav li a,
 #post-snippets-tabs.ui-tabs-collapsible .ui-tabs-nav li.ui-tabs-selected a {
 	/* first selector in group seems obsolete, but required to overcome bug in Opera applying cursor: text overall if defined elsewhere... */
 	cursor: pointer;
 }
+
 #post-snippets-tabs .ui-tabs-panel {
 	display: block;
 	border-width: 0;
@@ -67,8 +101,6 @@
 #post-snippets-tabs .ui-tabs-hide {
 	display: none !important;
 }
-
-
 #post-snippets-dialog label {
 	width: 60px;
 	display: inline-block;
