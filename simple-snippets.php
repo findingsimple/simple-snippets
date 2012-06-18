@@ -4,7 +4,7 @@ Plugin Name: Simple Snippets
 Plugin URI: http://plugins.findingsimple.com
 Description: Build a library of HTML snippets.
 Version: 1.0
-Author: Finding Simple (Jason Conroy & Brent Shepherd)
+Author: Finding Simple ( Jason Conroy & Brent Shepherd)
 Author URI: http://findingsimple.com
 License: GPL2
 */
@@ -244,7 +244,7 @@ class Simple_Snippets {
 		// Only run the function on post edit screens
 		if ( function_exists( 'get_current_screen' ) ) {
 			$screen = get_current_screen();
-			if ( $screen->base != 'post')
+			if ( $screen->base != 'post' )
 				return;
 		}
 
@@ -275,7 +275,7 @@ class Simple_Snippets {
 		// Only run the function on post edit screens
 		if ( function_exists( 'get_current_screen' ) ) {
 			$screen = get_current_screen();
-			if ($screen->base != 'post')
+			if ( $screen->base != 'post' )
 				return;
 		}
 
@@ -286,7 +286,7 @@ class Simple_Snippets {
 		# so they can be inserted into the editor, and get the variables replaced
 		# with user defined strings.
 		$snippets = self::get_snippets();
-		foreach ($snippets as $key => $snippet) {
+		foreach ( $snippets as $key => $snippet ) {
 			# Build a long string of the variables, ie: varname1={varname1} varname2={varname2} so {varnameX} can be replaced at runtime.
 			$var_arr = explode( ",", $snippet->variables );
 			$variables = '';
@@ -307,7 +307,7 @@ class Simple_Snippets {
 			foreach ( $snippets as $key => $snippet ) {
 				$var_arr = explode( ",", $snippet->variables );
 				if ( ! empty( $var_arr ) ) {
-					foreach ($var_arr as $key_2 => $var) {
+					foreach ( $var_arr as $key_2 => $var ) {
 						$varname = "var_" . $key . "_" . $key_2;
 						echo "var {$varname} = $( \"#{$varname}\" );\n";
 					}
@@ -330,16 +330,16 @@ class Simple_Snippets {
 							$( this ).dialog( "close" );
 							var selected = $tabs.tabs('option', 'selected');
 							<?php
-							foreach ($snippets as $key => $snippet) {
+							foreach ( $snippets as $key => $snippet ) {
 							?>
 								if (selected == <?php echo $key; ?>) {
 									insert_snippet = postsnippet_<?php echo $key; ?>;
 									<?php
-									$var_arr = explode(",",$snippet->variables);
-									if (!empty($var_arr[0])) {
-										foreach ($var_arr as $key_2 => $var) {
+									$var_arr = explode( ",", $snippet->variables );
+									if ( ! empty( $var_arr[0] ) ) {
+										foreach ( $var_arr as $key_2 => $var ) {
 											$varname = "var_" . $key . "_" . $key_2; ?>
-											insert_snippet = insert_snippet.replace(/\{<?php echo self::strip_default_val( $var ); ?>\}/g, <?php echo $varname; ?>.val());
+											insert_snippet = insert_snippet.replace( /\{<?php echo self::strip_default_val( $var ); ?>\}/g, <?php echo $varname; ?>.val());
 									<?php
 											echo "\n";
 										}
@@ -404,7 +404,7 @@ var post_snippets_caller = '';
 
 		// Create a tab for each available snippet
 		$snippets = self::get_snippets();
-		foreach ($snippets as $key => $snippet) {
+		foreach ( $snippets as $key => $snippet ) {
 			echo "\t\t\t\t";
 			echo "<li><a href=\"#ps-tabs-{$key}\">{$snippet->post_title}</a></li>";
 			echo "\n";
@@ -481,8 +481,8 @@ var post_snippets_caller = '';
 	 */
 	public static function create_shortcodes() {
 		$snippets = self::get_snippets();
-		if (!empty($snippets)) {
-			foreach ($snippets as $snippet) {
+		if ( ! empty( $snippets ) ) {
+			foreach ( $snippets as $snippet ) {
 				// If shortcode is enabled for the snippet, and a snippet has been entered, register it as a shortcode.
 				if ( ! empty( $snippet->post_content ) ) {
 
@@ -503,7 +503,7 @@ var post_snippets_caller = '';
 					}
 
 					add_shortcode( $snippet->post_name, create_function( '$atts, $content=null', 
-								'$shortcode_symbols = array('.$vars_str.');
+								'$shortcode_symbols = array( '.$vars_str.');
 
 								extract( shortcode_atts( $shortcode_symbols, $atts ) );
 
@@ -522,7 +522,7 @@ var post_snippets_caller = '';
 								// Strip escaping and execute nested shortcodes
 								$snippet = do_shortcode( stripslashes( $snippet ) );
 
-								return $snippet;') );
+								return $snippet;' ) );
 				}
 			}
 		}
@@ -539,7 +539,7 @@ var post_snippets_caller = '';
 		$snippets = get_posts( array( 'post_type' => self::$post_type_name ) );
 
 		foreach ( $snippets as $key => $snippet )
-			$snippets[$key]->variables = get_post_meta( $snippet->ID, '_snippet_variables', true);
+			$snippets[$key]->variables = get_post_meta( $snippet->ID, '_snippet_variables', true );
 
 		return $snippets;
 	}
