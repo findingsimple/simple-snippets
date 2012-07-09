@@ -98,7 +98,7 @@ class Simple_Snippets {
 	 * Adds the description metabox to the edit snippet page
 	 */
 	public static function snippet_description_meta_box( $post ) { ?>
-		<p><?php _e( 'A description for this snippet displayed when adding the snippet to a page/post.' ); ?></p>
+		<p><?php _e( 'An optional description for this snippet to display when adding the snippet to a page.' ); ?></p>
 		<label class="screen-reader-text" for="excerpt"><?php _e( 'Description' ) ?></label>
 		<textarea rows="1" cols="40" name="excerpt" tabindex="6" id="excerpt"><?php echo esc_attr( $post->post_excerpt ); ?></textarea>
 	<?php
@@ -108,9 +108,11 @@ class Simple_Snippets {
 	 * Adds the variables metabox to the edit snippet page
 	 */
 	public static function snippet_variables_meta_box( $post ) { ?>
-		<p><?php _e( 'Add variables in the form var_name="var value". Separate variables with a comma. To use a variable in your snippet, add the variable to your snippet between {} e.g. to insert var_one="default_val", insert {var_one}.' ); ?></p>
+		<p><?php _e( 'Add variables in the form:' ); ?></p>
+		<pre>var_name="var value",var_two="Value"</pre>
 		<label class="screen-reader-text" for="_snippet_variables"><?php _e( 'Variables' ) ?></label>
 		<input type="text" name="_snippet_variables" tabindex="8" id="_snippet_variables" value="<?php echo esc_attr( get_post_meta( $post->ID, '_snippet_variables', true ) ); ?>" style="width: 100%;"/>
+		<p><?php _e( 'To use a variable in your snippet, add the variable to your snippet between {} e.g. to insert var_one="default_val", insert {var_one}.' ); ?></p>
 	<?php
 	}
 
@@ -151,7 +153,6 @@ class Simple_Snippets {
 
 		register_post_type( self::$post_type_name, $args );
 	}
-
 
 	/**
 	 * Enqueues the necessary scripts and styles for the plugins
@@ -281,10 +282,9 @@ class Simple_Snippets {
 
 		echo "\n<!-- START: Post Snippets jQuery UI and related functions -->\n";
 		echo "<script type='text/javascript'>\n";
-		
-		# Prepare the snippets and shortcodes into javascript variables
-		# so they can be inserted into the editor, and get the variables replaced
-		# with user defined strings.
+
+		# Prepare the snippets and shortcodes into javascript variables so they can be inserted into the editor,
+		# and get the variables replaced with user defined strings.
 		$snippets = self::get_snippets();
 		foreach ( $snippets as $key => $snippet ) {
 			# Build a long string of the variables, ie: varname1={varname1} varname2={varname2} so {varnameX} can be replaced at runtime.
@@ -300,7 +300,7 @@ class Simple_Snippets {
 			echo "var postsnippet_{$key} = '[" . $shortcode . "]';\n";
 		}
 		?>
-		
+
 		jQuery(document).ready(function($){
 			<?php
 			# Create js variables for all form fields
@@ -314,9 +314,9 @@ class Simple_Snippets {
 				}
 			}
 			?>
-			
+
 			var $tabs = $("#post-snippets-tabs").tabs();
-			
+
 			$(function() {
 				$( "#post-snippets-dialog" ).dialog({
 					autoOpen: false,
@@ -397,27 +397,26 @@ var post_snippets_caller = '';
 		echo "\n<!-- START: Post Snippets UI Dialog -->\n";
 		// Setup the dialog divs
 		echo "<div class=\"hidden\">\n";
-		echo "\t<div id=\"post-snippets-dialog\" title=\"Post Snippets\">\n";
+		echo "<div id=\"post-snippets-dialog\" title=\"Post Snippets\">\n";
 		// Init the tabs div
-		echo "\t\t<div id=\"post-snippets-tabs\">\n";
-		echo "\t\t\t<ul>\n";
+		echo "<div id=\"post-snippets-tabs\">\n";
+		echo "<ul>\n";
 
 		// Create a tab for each available snippet
 		$snippets = self::get_snippets();
 		foreach ( $snippets as $key => $snippet ) {
-			echo "\t\t\t\t";
 			echo "<li><a href=\"#ps-tabs-{$key}\">{$snippet->post_title}</a></li>";
 			echo "\n";
 		}
-		echo "\t\t\t</ul>\n";
+		echo "</ul>\n";
 
 		// Create a panel with form fields for each available snippet
 		foreach ( $snippets as $key => $snippet ) {
-			echo "\t\t\t<div id=\"ps-tabs-{$key}\">\n";
+			echo "<div id=\"ps-tabs-{$key}\">\n";
 
 			// Print a snippet description if available
 			if ( ! empty( $snippet->post_excerpt ) )
-				echo "\t\t\t\t<p class=\"howto\">" . $snippet->post_excerpt . "</p>\n";
+				echo "<p class=\"howto\">" . $snippet->post_excerpt . "</p>\n";
 
 			// Get all variables defined for the snippet and output them as input fields
 			$var_arr = explode( ',', $snippet->variables );
@@ -432,19 +431,19 @@ var post_snippets_caller = '';
 					} else {
 						$def = '';
 					}
-					echo "\t\t\t\t<label for=\"var_{$key}_{$key_2}\">{$var}:</label>\n";
-					echo "\t\t\t\t<input type=\"text\" id=\"var_{$key}_{$key_2}\" name=\"var_{$key}_{$key_2}\" value=\"{$def}\" style=\"width: 190px\" />\n";
-					echo "\t\t\t\t<br/>\n";
+					echo "<label for=\"var_{$key}_{$key_2}\">{$var}:</label>\n";
+					echo "<input type=\"text\" id=\"var_{$key}_{$key_2}\" name=\"var_{$key}_{$key_2}\" value=\"{$def}\" style=\"width: 190px\" />\n";
+					echo "<br/>\n";
 				}
 			} else {
 				if ( empty( $snippet->post_excerpt ) )
-					echo "\t\t\t\t<p class=\"howto\">" . __( 'No variables are defined for this snippet.', self::$text_domain ) . "</p>\n";
+					echo "<p class=\"howto\">" . __( 'No variables are defined for this snippet.', self::$text_domain ) . "</p>\n";
 			}
-			echo "\t\t\t</div><!-- #ps-tabs-{$key} -->\n";
+			echo "</div><!-- #ps-tabs-{$key} -->\n";
 		}
 		// Close the tabs and dialog divs
-		echo "\t\t</div><!-- #post-snippets-tabs -->\n";
-		echo "\t</div><!-- #post-snippets-dialog -->\n";
+		echo "</div><!-- #post-snippets-tabs -->\n";
+		echo "</div><!-- #post-snippets-dialog -->\n";
 		echo "</div><!-- .hidden -->\n";
 
 		echo "<!-- END: Post Snippets UI Dialog -->\n\n";
@@ -481,62 +480,63 @@ var post_snippets_caller = '';
 	 */
 	public static function create_shortcodes() {
 		$snippets = self::get_snippets();
-		if ( ! empty( $snippets ) ) {
-			foreach ( $snippets as $snippet ) {
-				// If shortcode is enabled for the snippet, and a snippet has been entered, register it as a shortcode.
-				if ( ! empty( $snippet->post_content ) ) {
+		foreach ( $snippets as $snippet ) {
+			// If shortcode is enabled for the snippet, and a snippet has been entered, register it as a shortcode.
+			if ( ! empty( $snippet->post_content ) ) {
 
-					$vars = explode( ",", $snippet->variables );
+				$vars = explode( ",", $snippet->variables );
 
-					$vars_str = '';
+				$vars_str = '';
 
-					foreach ( $vars as $var ) {
-						if ( strpos( $var, '=' ) !== false ) {
-							$var_and_key = split( '=', $var );
-							$key = $var_and_key[0];
-							$var = addslashes( $var_and_key[1] );
-						} else {
-							$key = $var;
-							$var = '';
-						}
-						$vars_str = $vars_str . '"'.$key.'" => "'.$var.'",';
+				foreach ( $vars as $var ) {
+					if ( strpos( $var, '=' ) !== false ) {
+						$var_and_key = split( '=', $var );
+						$key = $var_and_key[0];
+						$var = addslashes( $var_and_key[1] );
+					} else {
+						$key = $var;
+						$var = '';
 					}
-
-					add_shortcode( $snippet->post_name, create_function( '$atts, $content=null', 
-								'$shortcode_symbols = array( '.$vars_str.');
-
-								extract( shortcode_atts( $shortcode_symbols, $atts ) );
-
-								$attributes = compact( array_keys( $shortcode_symbols ) );
-
-								// Add enclosed content if available to the attributes array
-								if ( $content != null )
-									$attributes["content"] = $content;
-
-								$snippet = \''. addslashes( wpautop( $snippet->post_content ) ) .'\';
-								$snippet = str_replace( "&", "&amp;", $snippet );
-
-								foreach ( $attributes as $key => $val )
-									$snippet = str_replace( "{".$key."}", $val, $snippet );
-
-								// Strip escaping and execute nested shortcodes
-								$snippet = do_shortcode( stripslashes( $snippet ) );
-
-								return $snippet;' ) );
+					$vars_str = $vars_str . '"'.$key.'" => "'.$var.'",';
 				}
+
+				add_shortcode( $snippet->post_name, create_function( '$atts, $content=null', 
+							'$shortcode_symbols = array( '.$vars_str.');
+
+							extract( shortcode_atts( $shortcode_symbols, $atts ) );
+
+							$attributes = compact( array_keys( $shortcode_symbols ) );
+
+							// Add enclosed content if available to the attributes array
+							if ( $content != null )
+								$attributes["content"] = $content;
+
+							$snippet = \''. addslashes( wpautop( $snippet->post_content ) ) .'\';
+							$snippet = str_replace( "&", "&amp;", $snippet );
+
+							foreach ( $attributes as $key => $val )
+								$snippet = str_replace( "{".$key."}", $val, $snippet );
+
+							// Strip escaping and execute nested shortcodes
+							$snippet = do_shortcode( stripslashes( $snippet ) );
+
+							return $snippet;' ) );
 			}
 		}
 	}
 
 
 	/**
-	 * Returns an associative array of all snippets. 
+	 * Returns an array of all snippets with their variables and post data.
 	 *
 	 * @since 1.0
 	 * @return array $post_name => $post_content
 	 */
 	public static function get_snippets(){
 		$snippets = get_posts( array( 'post_type' => self::$post_type_name ) );
+
+		if ( empty( $snippets ) ) 
+			$snippets = array();
 
 		foreach ( $snippets as $key => $snippet )
 			$snippets[$key]->variables = get_post_meta( $snippet->ID, '_snippet_variables', true );
