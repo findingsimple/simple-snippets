@@ -4,25 +4,25 @@
  * @version 2.0
  * @since 1.0
  */
-#post-snippets-tabs {
+#snippets-tabs {
 	/* position: relative prevents IE scroll bug (element with position: relative inside container with overflow: auto appear as "fixed") */
 	position: relative;
 	padding: .2em;
 	zoom: 1; 
 }
-#post-snippets-tabs .ui-tabs-nav {
+#snippets-tabs .ui-tabs-nav {
 	list-style: none;
 	margin: 1em 0 0;
-	padding: 0;
+	padding: 0 4px;
 	line-height: 24px;
 	position: relative;
 }
 
-#post-snippets-tabs .ui-tabs-nav li {
+#snippets-tabs .ui-tabs-nav li {
 	margin: 0 0 0 8px;
 	padding: 0 8px;
 	border: 1px solid #AAA;
-	background: #ECECEC;
+	background: #EFEFEF;
 	display: inline-block;
 	position: relative;
 	z-index: 0;
@@ -30,13 +30,13 @@
 	border-top-right-radius: 6px;
 }
 
-#post-snippets-tabs .ui-tabs-nav li.ui-tabs-selected {
+#snippets-tabs .ui-tabs-nav li.ui-tabs-selected {
 	background: #FFF;
 	color: #000;
 	z-index: 2;
-	border-bottom-color: #FFF;
+/*	border-bottom-color: #FFF; */
 }
-#post-snippets-tabs .ui-tabs-nav:before {
+#snippets-tabs .ui-tabs-nav:before {
 	position: absolute;
 	content: "";
 	width: 100%;
@@ -46,62 +46,81 @@
 	z-index: 1;
 }
 
-#post-snippets-tabs .ui-tabs-nav li:before,
-#post-snippets-tabs .ui-tabs-nav li:after {
+#snippets-tabs .ui-tabs-nav li:before,
+#snippets-tabs .ui-tabs-nav li:after {
 	position: absolute;
 	bottom: -1px;
 	width: 4px;
 	height: 4px;
 	content: " ";
+	border-top: 1px solid #AAA;
+	border-bottom: 1px solid #AAA;
 }
-#post-snippets-tabs .ui-tabs-nav li:after, 
-#post-snippets-tabs .ui-tabs-nav li:before {
+#snippets-tabs .ui-tabs-nav li:after, 
+#snippets-tabs .ui-tabs-nav li:before {
     border: 1px solid #AAA;
 }
-#post-snippets-tabs .ui-tabs-nav li:before {
+#snippets-tabs .ui-tabs-nav li:before {
 	left: -5px;
 	border-bottom-right-radius: 6px;
 	border-width: 0 1px 1px 0;
-	box-shadow: 2px 2px 0 #ECECEC;
+	box-shadow: 1px 1px 0 #ECECEC;
 }
-#post-snippets-tabs .ui-tabs-nav li:after {
+#snippets-tabs .ui-tabs-nav li:after {
 	right: -5px;
 	border-bottom-left-radius: 6px;
 	border-width: 0 0 1px 1px;
-	box-shadow: -2px 2px 0 #ECECEC;
+	box-shadow: -1px 1px 0 #ECECEC;
 }
-#post-snippets-tabs .ui-tabs-nav li.ui-tabs-selected:before {
+#snippets-tabs .ui-tabs-nav li.ui-tabs-selected:before {
     box-shadow: 2px 2px 0 #FFF;
 }
-#post-snippets-tabs .ui-tabs-nav li.ui-tabs-selected:after {
+#snippets-tabs .ui-tabs-nav li.ui-tabs-selected:after {
     box-shadow: -2px 2px 0 #FFF;
 }
-
-#post-snippets-tabs .ui-tabs-nav li a {
+#snippets-tabs .ui-tabs-nav li a {
 	text-decoration: none;
 }
 
-#post-snippets-tabs .ui-tabs-nav li.ui-tabs-selected a,
-#post-snippets-tabs .ui-tabs-nav li.ui-state-disabled a,
-#post-snippets-tabs .ui-tabs-nav li.ui-state-processing a {
+#snippets-tabs .ui-tabs-nav li.ui-tabs-selected a,
+#snippets-tabs .ui-tabs-nav li.ui-state-disabled a,
+#snippets-tabs .ui-tabs-nav li.ui-state-processing a {
 	cursor: pointer;
 }
-#post-snippets-tabs .ui-tabs-nav li a,
-#post-snippets-tabs.ui-tabs-collapsible .ui-tabs-nav li.ui-tabs-selected a {
+#snippets-tabs .ui-tabs-nav li a,
+#snippets-tabs.ui-tabs-collapsible .ui-tabs-nav li.ui-tabs-selected a {
 	/* first selector in group seems obsolete, but required to overcome bug in Opera applying cursor: text overall if defined elsewhere... */
 	cursor: pointer;
 }
 
-#post-snippets-tabs .ui-tabs-panel {
+#snippets-tabs .ui-tabs-panel {
 	display: block;
 	border-width: 0;
 	padding: 1em 1.4em;
 	background: none;
 }
-#post-snippets-tabs .ui-tabs-hide {
+#snippets-tabs .ui-tabs-hide {
 	display: none !important;
 }
-#post-snippets-dialog label {
-	width: 60px;
+#snippets-dialog label {
+	width: 100%;
 	display: inline-block;
+	margin: 4px 0;
+}
+#snippets-dialog input {
+	width: 85%;
+	float: right;
+	margin-top: -3px;
+}
+
+/* Add Snippet Page */
+
+#snippet-variables label {
+	display: inline-block;
+	margin-bottom: 6px;
+}
+#snippet-variables input[type="text"] {
+	width: 62%;
+	margin-top: -2px;
+	float: right;
 }
