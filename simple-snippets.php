@@ -35,12 +35,12 @@ if ( ! class_exists( 'Simple_Snippets' ) ) :
  * Plugin Main Class.
  *
  * @package Simple Snippets
- * @author Johan Steen <artstorm at gmail dot com>
+ * @author Brent Shepherd <brent@findingsimple.com>
  * @since 1.0
  */
 class Simple_Snippets {
 
-	const TINYMCE_PLUGIN_NAME = 'post_snippets';
+	const TINYMCE_PLUGIN_NAME = 'simple_snippets';
 
 	static $text_domain;
 
@@ -49,94 +49,167 @@ class Simple_Snippets {
 	public static function init() {
 		global $wp_version;
 
-		if ( is_admin() )
-			require( 'classes/help.php' );
-
 		self::$text_domain = apply_filters( 'simple_snippets_text_domain', 'Simple_Snippets' );
 
 		self::$post_type_name = apply_filters( 'simple_snippets_post_type_name', 'snippet' );
 
-		// Add TinyMCE button
-		add_action( 'init', array( __CLASS__, 'add_tinymce_button' ) );
 		add_action( 'init', array( __CLASS__, 'register_post_type' ) );
 
 		self::create_shortcodes();
 
-		add_action( 'admin_init', array( __CLASS__, 'enqueue_assets' ) );
+		add_action( 'admin_init', array( __CLASS__, 'enqueue_styles_and_scripts' ) );
+		add_action( 'admin_init', array( __CLASS__, 'add_tinymce_button' ) );
 		add_action( 'admin_head', array( __CLASS__, 'jquery_ui_dialog' ) );
 		add_action( 'admin_footer', array( __CLASS__, 'add_jquery_ui_dialog' ) );
 		add_action( 'add_meta_boxes', array( __CLASS__, 'add_remove_meta_boxes' ) );
 
 		add_action( 'admin_print_footer_scripts', array( __CLASS__, 'add_quicktag_button' ), 100 );
 
-		add_action( 'save_post', array( __CLASS__, 'save_snippet_variables' ) );
+		add_action( 'save_post', array( __CLASS__, 'save_snippet_meta' ) );
+
+		if ( is_admin() ) {
+			require_once( 'classes/help.php' );
+			Simple_Snippets_Help::init();
+		}
 	}
 
-	public static function save_snippet_variables( $post_id ) {
+	/**
+	 * When a snippet post type is saved, also save the meta associated with the snippet, like the variables 
+	 * and whether the snippet should be used as a shortcode or HTML.
+	 * 
+	 * @param $post_id int The ID of the snippet post the variables should be saved for.
+	 * @since 1.0
+	 */
+	public static function save_snippet_meta( $post_id ) {
+
+		// Cheatin’ uh?
 		if ( ! current_user_can( 'edit_post', $post_id ) && ! current_user_can( 'edit_page', $post_id ) )
 			return $post_id;
 
-		if ( isset( $_POST['_snippet_variables'] ) )
-			update_post_meta( $post_id, '_snippet_variables', $_POST['_snippet_variables'] );
+		// Meta not submitted
+		if ( ! isset( $_POST['_snippets_nonce'] ) || ! wp_verify_nonce( $_POST['_snippets_nonce'], __FILE__ ) )
+			return $post_id;
+
+		/* Defaults */
+		$_POST['_snippet_variables']    = ( isset( $_POST['_snippet_variables'] ) ) ? $_POST['_snippet_variables'] : array();
+		$_POST['_snippet_is_shortcode'] = ( isset( $_POST['_snippet_is_shortcode'] ) ) ? true : false;
+
+		/* Clear any empty variables (variables need a name but not a default value) */
+		foreach ( $_POST['_snippet_variables'] as $key => $variable_array )
+			if ( empty( $variable_array['variable_name'] ) )
+				unset( $_POST['_snippet_variables'][$key] );
+
+		update_post_meta( $post_id, '_snippet_variables', $_POST['_snippet_variables'] );
+		update_post_meta( $post_id, '_snippet_is_shortcode', $_POST['_snippet_is_shortcode'] );
 
 	}
 
 	/**
 	 * Performs a few metabox related functions for the edit snippet page. 
+	 * 
+	 * @since 1.0
 	 */
 	public static function add_remove_meta_boxes() {
-
 		// Rename the excerpt metabox
 		remove_meta_box( 'postexcerpt', self::$post_type_name, 'normal' );
-		add_meta_box( 'snippet_description', __( 'Description' ), array( __CLASS__, 'snippet_description_meta_box' ), self::$post_type_name, 'side', 'core' );
-
-		// Metabox for variables
-		add_meta_box( 'snippet_variables', __( 'Variables' ), array( __CLASS__, 'snippet_variables_meta_box' ), self::$post_type_name, 'side', 'low' );
+		add_meta_box( 'snippet_details', __( 'Snippet Details', self::$text_domain ), array( __CLASS__, 'snippet_details_meta_box' ), self::$post_type_name, 'side', 'core' );
 	}
 
 	/**
 	 * Adds the description metabox to the edit snippet page
+	 * 
+	 * @since 1.0
 	 */
-	public static function snippet_description_meta_box( $post ) { ?>
-		<p><?php _e( 'An optional description for this snippet to display when adding the snippet to a page.' ); ?></p>
-		<label class="screen-reader-text" for="excerpt"><?php _e( 'Description' ) ?></label>
-		<textarea rows="1" cols="40" name="excerpt" tabindex="6" id="excerpt"><?php echo esc_attr( $post->post_excerpt ); ?></textarea>
-	<?php
-	}
+	public static function snippet_details_meta_box( $post ) { 
 
-	/**
-	 * Adds the variables metabox to the edit snippet page
-	 */
-	public static function snippet_variables_meta_box( $post ) { ?>
-		<p><?php _e( 'Add variables in the form:' ); ?></p>
-		<pre>var_name="var value",var_two="Value"</pre>
-		<label class="screen-reader-text" for="_snippet_variables"><?php _e( 'Variables' ) ?></label>
-		<input type="text" name="_snippet_variables" tabindex="8" id="_snippet_variables" value="<?php echo esc_attr( get_post_meta( $post->ID, '_snippet_variables', true ) ); ?>" style="width: 100%;"/>
-		<p><?php _e( 'To use a variable in your snippet, add the variable to your snippet between {} e.g. to insert var_one="default_val", insert {var_one}.' ); ?></p>
-	<?php
+		$is_shortcode = ( in_array( get_post_meta( $post->ID, '_snippet_is_shortcode', true ), array( '', true ) ) ) ? true : false;
+		wp_nonce_field( __FILE__, '_snippets_nonce' );
+
+		$snippet_variables = get_post_meta( $post->ID, '_snippet_variables', true );
+
+		if ( empty( $snippet_variables ) )
+			$snippet_variables = array( array( 'variable_name' => '', 'variable_default' => '' ) );
+
+		?>
+		<p><?php _e( 'An optional description for display when inserting the snippet.', self::$text_domain ); ?></p>
+		<label class="screen-reader-text" for="excerpt"><?php _e( 'Description', self::$text_domain ) ?></label>
+		<textarea rows="1" cols="40" name="excerpt" tabindex="6" id="excerpt"><?php echo esc_attr( $post->post_excerpt ); ?></textarea>
+
+		<h4><?php _e( 'Shortcode' ); ?></h4>
+
+		<label for="_snippet_is_shortcode">
+			<input type="checkbox" name="_snippet_is_shortcode" id="_snippet_is_shortcode" <?php checked( $is_shortcode ); ?>/>
+			<?php _e( 'Use snippet as a shortcode', self::$text_domain ) ?>
+		</label>
+
+		<h4><?php _e( 'Variables' ); ?></h4>
+
+		<fieldset id="snippet-variables">
+			<?php foreach ( $snippet_variables as $index => $snippet_variable ) : ?>
+			<fieldset class="snippet-variable">
+				<label for="_snippet_variables[<?php echo $index; ?>][variable_name]"><?php _e( 'Variable Name:', self::$text_domain ) ?>
+					<input type="text" name="_snippet_variables[<?php echo $index; ?>][variable_name]" id="_snippet_variables[<?php echo $index; ?>][variable_name]" value="<?php echo $snippet_variable['variable_name']; ?>" />
+				</label>
+				<label for="_snippet_variables[<?php echo $index; ?>][variable_default]"><?php _e( 'Default Value/s:', self::$text_domain ) ?>
+					<input type="text" name="_snippet_variables[<?php echo $index; ?>][variable_default]" id="_snippet_variables[<?php echo $index; ?>][variable_default]" value="<?php echo $snippet_variable['variable_default']; ?>" />
+				</label>
+			</fieldset>
+			<?php endforeach; ?>
+		</fieldset>
+
+		<input type="button" id="snippet_variable_adder" value="<?php _e( 'Add a Variable', self::$text_domain ); ?>" class="button"/>
+
+<script type="text/javascript">
+jQuery(document).ready(function($){
+	$('#snippet_variable_adder').click(function(){
+		var elementCount = $('#snippet-variables fieldset').length,
+			oldElementID = elementCount - 1,
+			newFieldset  = $('#snippet-variables fieldset:last').clone();
+
+		// Clear values
+		newFieldset.find('input').val('');
+
+		// Update the attributes
+		$.each(['variable_name','variable_default'],function(index,keyName){
+			newFieldset.find('[name="_snippet_variables['+oldElementID+']['+keyName+']"]').attr({
+				'id': '_snippet_variables['+elementCount+']['+keyName+']',
+				'name': '_snippet_variables['+elementCount+']['+keyName+']'
+			});
+			newFieldset.find('[for="_snippet_variables['+oldElementID+']['+keyName+']"]').attr({
+				'for': '_snippet_variables['+elementCount+']['+keyName+']'
+			});
+		});
+
+		$('#snippet-variables fieldset:last').after(newFieldset);
+	});
+});
+</script>
+<?php
 	}
 
 	/**
 	 * Registers the Snippet post type
+	 * 
+	 * @since 1.0
 	 */
 	public static function register_post_type() {
-		$labels               = array(
-			'name'               => _x( 'Snippets', 'post type general name' ),
-			'singular_name'      => _x( 'Snippet', 'post type singular name' ),
+		$labels = array(
+			'name'               => _x( 'Snippets', 'post type general name', self::$text_domain ),
+			'singular_name'      => _x( 'Snippet', 'post type singular name', self::$text_domain ),
 			'add_new'            => _x( 'Add New', 'book' ),
-			'add_new_item'       => __( 'Add New Snippet' ),
-			'edit_item'          => __( 'Edit Snippet' ),
-			'new_item'           => __( 'New Snippet' ),
-			'all_items'          => __( 'All Snippets' ),
-			'view_item'          => __( 'View Snippet' ),
-			'search_items'       => __( 'Search Snippets' ),
-			'not_found'          => __( 'No snippets found' ),
-			'not_found_in_trash' => __( 'No snippets found in Trash' ), 
+			'add_new_item'       => __( 'Add New Snippet', self::$text_domain ),
+			'edit_item'          => __( 'Edit Snippet', self::$text_domain ),
+			'new_item'           => __( 'New Snippet', self::$text_domain ),
+			'all_items'          => __( 'All Snippets', self::$text_domain ),
+			'view_item'          => __( 'View Snippet', self::$text_domain ),
+			'search_items'       => __( 'Search Snippets', self::$text_domain ),
+			'not_found'          => __( 'No snippets found', self::$text_domain ),
+			'not_found_in_trash' => __( 'No snippets found in Trash', self::$text_domain ), 
 			'parent_item_colon'  => '',
-			'menu_name'          => __( 'Snippets' )
+			'menu_name'          => __( 'Snippets', self::$text_domain )
 		);
 
-		$args                 = array(
+		$args = array(
 			'labels'             => $labels,
 			'public'             => false,
 			'publicly_queryable' => false,
@@ -159,7 +232,7 @@ class Simple_Snippets {
 	 *
 	 * @since 1.0
 	 */
-	function enqueue_assets() {
+	function enqueue_styles_and_scripts() {
 		wp_enqueue_script( 'jquery-ui-dialog' );
 		wp_enqueue_script( 'jquery-ui-tabs' );
 		wp_enqueue_style( 'wp-jquery-ui-dialog' );
@@ -168,16 +241,8 @@ class Simple_Snippets {
 		wp_enqueue_style( 'snippets', self::get_url( '/css/admin.css' ) );
 	}
 
-
-	// -------------------------------------------------------------------------
-	// WordPress Editor Buttons
-	// -------------------------------------------------------------------------
-
 	/**
-	 * Add TinyMCE button.
-	 *
-	 * Adds filters to add custom buttons to the TinyMCE editor (Visual Editor)
-	 * in WordPress.
+	 * Add TinyMCE Snippet button.
 	 *
 	 * @since 1.0
 	 */
@@ -196,76 +261,60 @@ class Simple_Snippets {
 	}
 
 	/**
-	 * Register TinyMCE button.
+	 * Register a TinyMCE button.
 	 *
-	 * Pushes the custom TinyMCE button into the array of with button names.
+	 * Pushes the snippet TinyMCE button into the array of with button names.
 	 * 'separator' or '|' can be pushed to the array as well. See the link
 	 * for all available TinyMCE controls.
 	 *
-	 * @see		wp-includes/class-wp-editor.php
-	 * @link	http://www.tinymce.com/wiki.php/Buttons/controls
+	 * @see wp-includes/class-wp-editor.php
+	 * @link http://www.tinymce.com/wiki.php/Buttons/controls
 	 * @since 1.0
-	 *
-	 * @param	array	$buttons	Filter supplied array of buttons to modify
-	 * @return	array				The modified array with buttons
 	 */
 	public static function register_tinymce_button( $buttons ) {
+
 		array_push( $buttons, 'separator', self::TINYMCE_PLUGIN_NAME );
+
 		return $buttons;
 	}
 
 	/**
-	 * Register TinyMCE plugin.
+	 * Adds the URL of the Snippet TinyMCE plugin to the associative array of all TinyMCE plugins.
 	 *
-	 * Adds the absolute URL for the TinyMCE plugin to the associative array of
-	 * plugins. Array structure: 'plugin_name' => 'plugin_url'
-	 *
-	 * @see		wp-includes/class-wp-editor.php
+	 * @see wp-includes/class-wp-editor.php
 	 * @since 1.0
-	 *
-	 * @param	array	$plugins	Filter supplied array of plugins to modify
-	 * @return	array				The modified array with plugins
 	 */
 	public static function register_tinymce_plugin( $plugins ) {
-		// Load the TinyMCE plugin, editor_plugin.js, into the array
-		$plugins[self::TINYMCE_PLUGIN_NAME] = self::get_url( '/tinymce/editor_plugin.js?ver=1.9', __FILE__ );
+
+		$plugins[self::TINYMCE_PLUGIN_NAME] = self::get_url( '/tinymce/editor_plugin.js', __FILE__ );
 
 		return $plugins;
 	}
 
+
 	/**
 	 * Adds a QuickTag button to the HTML editor.
 	 *
-	 * Compatible with WordPress 3.3 and newer.
-	 *
-	 * @see			wp-includes/js/quicktags.dev.js -> qt.addButton()
+	 * @see wp-includes/js/quicktags.dev.js -> qt.addButton()
 	 * @since 1.0
 	 */
 	public static function add_quicktag_button() {
-		// Only run the function on post edit screens
+
 		if ( function_exists( 'get_current_screen' ) ) {
 			$screen = get_current_screen();
 			if ( $screen->base != 'post' )
 				return;
 		}
-
-		echo "\n<!-- START: Add QuickTag button for Snippets -->\n";
-		?>
-		<script type="text/javascript" charset="utf-8">
-			QTags.addButton( 'post_snippets_id', 'snippet', qt_post_snippets );
-			function qt_post_snippets() {
-				post_snippets_caller = 'html';
-				jQuery( "#post-snippets-dialog" ).dialog( "open" );
-			}
-		</script>
-		<?php
-		echo "\n<!-- END: Add QuickTag button for Post Snippets -->\n";
+?>
+<script type="text/javascript" charset="utf-8">
+QTags.addButton('post_snippets_id', 'snippet', function() {
+	post_snippets_caller = 'html';
+	jQuery( "#snippets-dialog" ).dialog( "open" );
+});
+</script>
+<?php
 	}
 
-
-	// -------------------------------------------------------------------------
-	// JavaScript / jQuery handling for the post editor
-	// -------------------------------------------------------------------------
 
 	/**
 	 * jQuery control for the dialog and Javascript needed to insert snippets into the editor
@@ -273,109 +322,36 @@ class Simple_Snippets {
 	 * @since 1.0
 	 */
 	public static function jquery_ui_dialog() {
-		// Only run the function on post edit screens
+
 		if ( function_exists( 'get_current_screen' ) ) {
 			$screen = get_current_screen();
 			if ( $screen->base != 'post' )
 				return;
 		}
 
-		echo "\n<!-- START: Post Snippets jQuery UI and related functions -->\n";
-		echo "<script type='text/javascript'>\n";
-
-		# Prepare the snippets and shortcodes into javascript variables so they can be inserted into the editor,
-		# and get the variables replaced with user defined strings.
+		/* Prepare the snippets and shortcodes into javascript variables so they can be inserted into the editor and get the variables replaced with user defined strings. */
 		$snippets = self::get_snippets();
+
+		$snippet_data = array( 'pluginName' => self::TINYMCE_PLUGIN_NAME );
+
 		foreach ( $snippets as $key => $snippet ) {
-			# Build a long string of the variables, ie: varname1={varname1} varname2={varname2} so {varnameX} can be replaced at runtime.
-			$var_arr = explode( ",", $snippet->variables );
-			$variables = '';
-			if ( ! empty( $var_arr ) ) {
-				foreach ( $var_arr as $var ) {
-					$var = self::strip_default_val( $var );
-					$variables .= ' ' . $var . '="{' . $var . '}"';
-				}
+
+			$variable_string = '';
+
+			/* Build an array of variable names, defaults & a shortcode string for each variable. */
+			foreach ( $snippet->variables as $key_2 => $variable ) {
+
+				$snippet_data['variables'][$snippet->post_name][self::sanitize_variable_name( $variable['variable_name'] )] = $variable['variable_default'];
+
+				$variable_string .= ' ' . $variable['variable_name'] . '="{' . $variable['variable_name'] . '}"';
 			}
-			$shortcode = $snippet->post_name . $variables;
-			echo "var postsnippet_{$key} = '[" . $shortcode . "]';\n";
+
+			$snippet_data['shortcodes'][$snippet->post_name] = '[' . $snippet->post_name . $variable_string . ']';
 		}
-		?>
 
-		jQuery(document).ready(function($){
-			<?php
-			# Create js variables for all form fields
-			foreach ( $snippets as $key => $snippet ) {
-				$var_arr = explode( ",", $snippet->variables );
-				if ( ! empty( $var_arr ) ) {
-					foreach ( $var_arr as $key_2 => $var ) {
-						$varname = "var_" . $key . "_" . $key_2;
-						echo "var {$varname} = $( \"#{$varname}\" );\n";
-					}
-				}
-			}
-			?>
+		wp_enqueue_script( 'snippets', self::get_url( '/js/snippets.js' ) );
 
-			var $tabs = $("#post-snippets-tabs").tabs();
-
-			$(function() {
-				$( "#post-snippets-dialog" ).dialog({
-					autoOpen: false,
-					modal: true,
-					dialogClass: 'wp-dialog',
-					buttons: {
-						Cancel: function() {
-							$( this ).dialog( "close" );
-						},
-						"Insert": function() {
-							$( this ).dialog( "close" );
-							var selected = $tabs.tabs('option', 'selected');
-							<?php
-							foreach ( $snippets as $key => $snippet ) {
-							?>
-								if (selected == <?php echo $key; ?>) {
-									insert_snippet = postsnippet_<?php echo $key; ?>;
-									<?php
-									$var_arr = explode( ",", $snippet->variables );
-									if ( ! empty( $var_arr[0] ) ) {
-										foreach ( $var_arr as $key_2 => $var ) {
-											$varname = "var_" . $key . "_" . $key_2; ?>
-											insert_snippet = insert_snippet.replace( /\{<?php echo self::strip_default_val( $var ); ?>\}/g, <?php echo $varname; ?>.val());
-									<?php
-											echo "\n";
-										}
-									}
-									?>
-								}
-							<?php
-							}
-							?>
-
-							// Decide what method to use to insert the snippet depending on which editor the window was opened from
-							if (post_snippets_caller == 'html') {
-								// HTML editor in WordPress 3.3 and greater
-								QTags.insertContent(insert_snippet);
-							} else if (post_snippets_caller == 'html_pre33') {
-								// HTML editor in WordPress below 3.3.
-								edInsertContent(post_snippets_canvas, insert_snippet);
-							} else {
-								// Visual Editor
-								post_snippets_canvas.execCommand('mceInsertContent', false, insert_snippet);
-							}
-
-						}
-					},
-					width: 500,
-				});
-			});
-		});
-
-// Global variables to keep track on the canvas instance and from what editor that opened the Post Snippets popup.
-var post_snippets_canvas;
-var post_snippets_caller = '';
-
-<?php
-		echo "</script>\n";
-		echo "\n<!-- END: Post Snippets jQuery UI and related functions -->\n";
+		wp_localize_script( 'snippets', 'SnippetData', $snippet_data );
 	}
 
 	/**
@@ -387,88 +363,42 @@ var post_snippets_caller = '';
 	 * @since 1.0
 	 */
 	public static function add_jquery_ui_dialog() {
-		// Only run the function on post edit screens
-		if ( function_exists( 'get_current_screen' ) ) {
-			$screen = get_current_screen();
-			if ( $screen->base != 'post' )
-				return;
-		}
 
-		echo "\n<!-- START: Post Snippets UI Dialog -->\n";
-		// Setup the dialog divs
-		echo "<div class=\"hidden\">\n";
-		echo "<div id=\"post-snippets-dialog\" title=\"Post Snippets\">\n";
-		// Init the tabs div
-		echo "<div id=\"post-snippets-tabs\">\n";
-		echo "<ul>\n";
+		$screen = get_current_screen();
 
-		// Create a tab for each available snippet
-		$snippets = self::get_snippets();
-		foreach ( $snippets as $key => $snippet ) {
-			echo "<li><a href=\"#ps-tabs-{$key}\">{$snippet->post_title}</a></li>";
-			echo "\n";
-		}
-		echo "</ul>\n";
+		if ( $screen->base != 'post' )
+			return;
+?>
+<div class="hidden">
+	<div id="snippets-dialog" title="Snippets">
+		<div id="snippets-tabs">
+			<ul>
+			<?php $snippets = self::get_snippets(); ?>
+			<?php foreach ( $snippets as $key => $snippet ) : ?>
+				<li><a href="#snippet-tab-<?php echo $snippet->post_name; ?>"><?php echo $snippet->post_title; ?></a></li>
+			<?php endforeach; ?>
+			</ul>
 
-		// Create a panel with form fields for each available snippet
-		foreach ( $snippets as $key => $snippet ) {
-			echo "<div id=\"ps-tabs-{$key}\">\n";
+			<?php foreach ( $snippets as $key => $snippet ) : ?>
+			<div id="snippet-tab-<?php echo $snippet->post_name; ?>" class="snippet-tab">
 
-			// Print a snippet description if available
-			if ( ! empty( $snippet->post_excerpt ) )
-				echo "<p class=\"howto\">" . $snippet->post_excerpt . "</p>\n";
+				<?php if ( ! empty( $snippet->post_excerpt ) ) : ?>
+				<p class="howto"><?php echo $snippet->post_excerpt; ?></p>
+				<?php endif; ?>
 
-			// Get all variables defined for the snippet and output them as input fields
-			$var_arr = explode( ',', $snippet->variables );
-			if ( ! empty( $var_arr[0] ) ) {
-				foreach ( $var_arr as $key_2 => $var ) {
-					// Default value exists?
-					$def_pos = strpos( $var, '=' );
-					if ( $def_pos !== false ) {
-						$split = explode( '=', $var );
-						$var = $split[0];
-						$def = esc_attr( $split[1] );
-					} else {
-						$def = '';
-					}
-					echo "<label for=\"var_{$key}_{$key_2}\">{$var}:</label>\n";
-					echo "<input type=\"text\" id=\"var_{$key}_{$key_2}\" name=\"var_{$key}_{$key_2}\" value=\"{$def}\" style=\"width: 190px\" />\n";
-					echo "<br/>\n";
-				}
-			} else {
-				if ( empty( $snippet->post_excerpt ) )
-					echo "<p class=\"howto\">" . __( 'No variables are defined for this snippet.', self::$text_domain ) . "</p>\n";
-			}
-			echo "</div><!-- #ps-tabs-{$key} -->\n";
-		}
-		// Close the tabs and dialog divs
-		echo "</div><!-- #post-snippets-tabs -->\n";
-		echo "</div><!-- #post-snippets-dialog -->\n";
-		echo "</div><!-- .hidden -->\n";
+				<?php foreach ( $snippet->variables as $key_2 => $variable ) : ?>
+				<?php $var_name = $snippet->post_name . '_' . self::sanitize_variable_name( $variable['variable_name'] ); ?>
+				<label for="<?php echo $var_name; ?>"><?php echo $variable['variable_name'] ?>:
+					<input type="text" id="<?php echo $var_name; ?>" name="<?php echo $var_name; ?>" value="<?php echo $variable['variable_default'] ?>" />
+				</label>
+				<?php endforeach; ?>
+			</div><!-- #ps-tabs-<?php echo $key; ?> -->
+			<?php endforeach; ?>
 
-		echo "<!-- END: Post Snippets UI Dialog -->\n\n";
-	}
-
-	/**
-	 * Strip Default Value.
-	 *
-	 * Checks if a variable string contains a default value, and if it does it 
-	 * will strip it away and return the string with only the variable name
-	 * kept.
-	 *
-	 * @since 1.0
-	 * @param	string	$variable	The variable to check for default value
-	 * @return	string				The variable without any default value
-	 */
-	public static function strip_default_val( $variable ) {
-		// Check if variable contains a default defintion
-		$def_pos = strpos( $variable, '=' );
-
-		if ( $def_pos !== false ) {
-			$split = str_split( $variable, $def_pos );
-			$variable = $split[0];
-		}
-		return $variable;
+		</div><!-- #snippets-tabs -->
+	</div><!-- #snippets-dialog -->
+</div><!-- .hidden -->
+<?php
 	}
 
 	// -------------------------------------------------------------------------
@@ -481,24 +411,14 @@ var post_snippets_caller = '';
 	public static function create_shortcodes() {
 		$snippets = self::get_snippets();
 		foreach ( $snippets as $snippet ) {
+
 			// If shortcode is enabled for the snippet, and a snippet has been entered, register it as a shortcode.
 			if ( ! empty( $snippet->post_content ) ) {
 
-				$vars = explode( ",", $snippet->variables );
-
 				$vars_str = '';
 
-				foreach ( $vars as $var ) {
-					if ( strpos( $var, '=' ) !== false ) {
-						$var_and_key = split( '=', $var );
-						$key = $var_and_key[0];
-						$var = addslashes( $var_and_key[1] );
-					} else {
-						$key = $var;
-						$var = '';
-					}
-					$vars_str = $vars_str . '"'.$key.'" => "'.$var.'",';
-				}
+				foreach ( $snippet->variables as $snippet_variable )
+					$vars_str = $vars_str . '"'.$snippet_variable['variable_name'].'" => "'.$snippet_variable['variable_default'].'",';
 
 				add_shortcode( $snippet->post_name, create_function( '$atts, $content=null', 
 							'$shortcode_symbols = array( '.$vars_str.');
@@ -525,7 +445,6 @@ var post_snippets_caller = '';
 		}
 	}
 
-
 	/**
 	 * Returns an array of all snippets with their variables and post data.
 	 *
@@ -542,6 +461,19 @@ var post_snippets_caller = '';
 			$snippets[$key]->variables = get_post_meta( $snippet->ID, '_snippet_variables', true );
 
 		return $snippets;
+	}
+
+	/**
+	 * Returns an array of all snippets with their variables and post data.
+	 *
+	 * @since 1.0
+	 * @return array $post_name => $post_content
+	 */
+	public static function sanitize_variable_name( $variable_name ) {
+
+		$variable_name = str_replace( ' ', '-', sanitize_user( $variable_name, true ) );
+
+		return $variable_name;
 	}
 
 	/**
