@@ -1,4 +1,4 @@
 tinyMCE.addI18n({en:{
-post_snippets:{	
+simple_snippets:{	
 desc : 'Insert a Post Snippet'
 }}});
