@@ -9,21 +9,20 @@
  * @since 1.0
  */
 class Simple_Snippets_Help {
+
+	static $screen_id;
+
 	/**
 	 * Constructor.
 	 *
 	 * @since 1.0
 	 * @param	string	The option page to load the help text on
 	 */
-	public function __construct( $option_page ) {
-		// If WordPress is 3.3 or higher, use the new Help API, otherwise call
-		// the old contextual help action.
-		global $wp_version;
-		if ( version_compare( $wp_version, '3.3', '>=' ) ) {
-			add_action( 'load-' . $option_page, array( &$this,'add_help_tabs' ) );
-		} else {
-			add_action( 'contextual_help', array( &$this,'add_help' ), 10, 3 );
-		}
+	public static function init( $screen_id = 'snippet' ) {
+		self::$screen_id = $screen_id;
+
+		add_action( 'load-post.php', array( __CLASS__, 'add_help_tabs' ) );
+		add_action( 'load-post-new.php', array( __CLASS__, 'add_help_tabs' ) );
 	}
 
 	/**
@@ -31,39 +30,24 @@ class Simple_Snippets_Help {
 	 *
 	 * @since 1.0
 	 */
-	public function add_help_tabs() {
+	public static function add_help_tabs() {
+
 		$screen = get_current_screen();
-		$screen->set_help_sidebar( $this->help_sidebar() );
-		$screen->add_help_tab( array(
-			'id'      => 'basic-plugin-help',
-			'title'   => __( 'Basic', 'post-snippets' ),
-			'content' => $this->help_basic()
-		) );
-		$screen->add_help_tab( array(
-			'id'      => 'shortcode-plugin-help',
-			'title'   => __( 'Shortcode', 'post-snippets' ),
-			'content' => $this->help_shortcode()
-		) );
-	}
 
-	/**
-	 * The right sidebar help text.
-	 * 
-	 * @since 1.0
-	 * @return	string	The help text
-	 */
-	public function help_sidebar() {
-		return '<p><strong>'.
-		__( 'For more information:', 'post-snippets' ).
-		'</strong></p>
+		if ( $screen->id == self::$screen_id ) {
 
-		<p><a href="http://wpstorm.net/wordpress-plugins/post-snippets/" target="_blank">'.
-		__( 'Post Snippets Documentation', 'post-snippets' ).
-		'</a></p>
+			$screen->add_help_tab( array(
+				'id'      => 'basic-plugin-help',
+				'title'   => __( 'Basic', Simple_Snippets::$text_domain ),
+				'content' => self::help_tab_basic()
+			) );
 
-		<p><a href="http://wordpress.org/tags/post-snippets?forum_id=10" target="_blank">'.
-		__( 'Support Forums', 'post-snippets' ).
-		'</a></p>';
+			$screen->add_help_tab( array(
+				'id'      => 'variables-plugin-help',
+				'title'   => __( 'Variables', Simple_Snippets::$text_domain ),
+				'content' => self::help_tab_variables()
+			) );
+		}
 	}
 
 	/**
@@ -72,95 +56,50 @@ class Simple_Snippets_Help {
 	 * @since 1.0
 	 * @return	string	The help text
 	 */
-	public function help_basic() {
-		return '<h2>'.
-		__( 'Title', 'post-snippets' ).
-		'</h2>
-		<p>'.
-		__( 'Give the snippet a title that helps you identify it in the post editor. This also becomes the name of the shortcode if you enable that option', 'post-snippets' ).
-		'</p>
+	public static function help_tab_basic() {
+		ob_start(); ?>
+<h2><?php _e( 'Title', Simple_Snippets::$text_domain ); ?></h2>
+<p><?php _e( 'The snippet title is used to identify the snippet. This will also become the name of the shortcode if you enable that option.', Simple_Snippets::$text_domain ); ?></p>
 
-		<h2>'.
-		__( 'Variables', 'post-snippets' ).
-		'</h2>
-		<p>'.
-		__( 'A comma separated list of custom variables you can reference in your snippet. A variable can also be assigned a default value that will be used in the insert window by using the equal sign, variable=default.', 'post-snippets' ).
-		'</p>
-		<p><strong>'.
-		__( 'Example', 'post-snippets' ).
-		'</strong><br/>
-		<code>url,name,role=user,title</code></p>'.
+<h2><?php _e( 'Content', Simple_Snippets::$text_domain ); ?></h2>
+<p><?php _e( 'Create HTML content for your snippet just as you would create content for a post or page. You can use shortcodes and even other snippets within your snippet\'s content. To use variables in the content, reference them between curly braces e.g. <code>{variable_name}</code>.', Simple_Snippets::$text_domain ); ?></p>
 
-		'<h2>'.
-		__( 'Snippet', 'post-snippets' ).
-		'</h2>
-		<p>'.
-		__('This is the block of text, HTML or PHP to insert in the post or as a shortcode. If you have entered predefined variables you can reference them from the snippet by enclosing them in {} brackets.', 'post-snippets' ).
-		'</p>
-		<p><strong>'.
-		__( 'Example', 'post-snippets' ).
-		'</strong><br/>'.
-		__( 'To reference the variables in the example above, you would enter {url} and {name}. So if you enter this snippet:', 'post-snippets' ).
-		'<br/>
-		<code>This is the website of &lt;a href="{url}"&gt;{name}&lt;/a&gt;</code>
-		<br/>'.
-		__( 'You will get the option to replace url and name on insert if they are defined as variables.', 'post-snippets').
-		'</p>
-		
-		<h2>'
-		. __( 'Description', 'post-snippets' ).
-		'</h2>
-		<p>'.
-		__( 'An optional description for the Snippet. If filled out, the description will be displayed in the snippets insert window in the post editor.', 'post-snippets').
-		'</p>';
+<h2><?php _e( 'Description', Simple_Snippets::$text_domain ); ?></h2>
+<p><?php _e( 'Include an optional explanation or description of the snippet. If filled out, the description will be displayed in insert snippet window of the post editor.', Simple_Snippets::$text_domain); ?></p>
+
+<h2><?php _e( 'Shortcode', Simple_Snippets::$text_domain ); ?></h2>
+<p><?php _e( 'When enabling the shortcode checkbox, the snippet is no longer inserted into a post as HTML, instead it is inserted as a shortcode. The advantage of a shortcode is that you can insert a block of text or code in many places on the site, and update the content from one single place.', Simple_Snippets::$text_domain ); ?></p>
+<p><?php _e( 'The name to use the shortcode is the same as the title of the snippet (with spaces replaced by hypehens). When inserting a snippet as a shortcode, the shortcode tag will be inserted into the post instead of the HTML content i.e. [snippet-name].', Simple_Snippets::$text_domain ); ?></p>
+
+<?php 
+		return ob_get_clean();
 	}
 
 	/**
-	 * The shortcode help tab.
+	 * The basic help tab.
 	 * 
 	 * @since 1.0
 	 * @return	string	The help text
 	 */
-	public function help_shortcode() {
-		return '<p>'.
-		__( 'When enabling the shortcode checkbox, the snippet is no longer inserted directly but instead inserted as a shortcode. The obvious advantage of this is of course that you can insert a block of text or code in many places on the site, and update the content from one single place.', 'post-snippets' ).
-		'</p>
+	public static function help_tab_variables() {
+		ob_start(); ?>
+<h2><?php _e( 'Variables', Simple_Snippets::$text_domain ); ?></h2>
+<p><?php _e( 'You can use variables to dynamically change certain values in your snippet. A variable can also be assigned a default value.', Simple_Snippets::$text_domain ); ?></p>
 
-		<p>'.
-		__( 'The name to use the shortcode is the same as the title of the snippet (spaces are not allowed). When inserting a shortcode snippet, the shortcode and not the content will be inserted in the post.', 'post-snippets' ).
-		'</p>
-		<p>'.
-		__( 'If you enclose the shortcode in your posts, you can access the enclosed content by using the variable {content} in your snippet. The {content} variable is reserved, so don\'t use it in the variables field.', 'post-snippets' ).
-		'</p>
+<h3><?php _e( 'Variable Names', Simple_Snippets::$text_domain ); ?></h3>
+<p><?php _e( 'Variable names should be unique. For best results, a variable name should only contain letters (a-z), numbers (0-9) and hyphens.', Simple_Snippets::$text_domain ); ?></p>
 
-		<h2>'
-		. __( 'Options', 'post-snippets' ).
-		'</h2>
-		<p><strong>wptexturize</strong><br/>'.
-		sprintf(__( 'Before the shortcode is outputted, it can optionally be formatted with %s, to transform quotes to smart quotes, apostrophes, dashes, ellipses, the trademark symbol, and the multiplication symbol.', 'post-snippets' ), '<a href="http://codex.wordpress.org/Function_Reference/wptexturize">wptexturize</a>' ).
-		'</p>';
+<h3><?php _e( 'Variable Values', Simple_Snippets::$text_domain ); ?></h3>
+<p><?php _e( 'A variable can be assigned a default value which will be used if no other value is provided.', Simple_Snippets::$text_domain ); ?></p>
+
+<h3><?php _e( 'Variable Value Select Box', Simple_Snippets::$text_domain ); ?></h3>
+<p><?php _e( 'To constrain the available values for a variable to a list of items, insert a comma separated list in the <em>Default Value/s</em> field.', Simple_Snippets::$text_domain ); ?></p>
+<p><?php _e( 'For example, entering <code>ACT,NSW,NT,QLD,SA,TAS,VIC,WA</code> in the <em>Default Value/s</em> would cause a select box with States and Territories to be displayed when inserting a snippet.', Simple_Snippets::$text_domain ); ?></p>
+
+<h3><?php _e( 'Using a Variable', Simple_Snippets::$text_domain ); ?></h3>
+<p><?php _e( 'To use a variable in a snippet, insert the variable name enclosed in curly braces. For example, to use a variable named <code>var_one</code>, add <code>{var_one}</code> to your snippet.', Simple_Snippets::$text_domain ); ?></p>
+	<?php 
+		return ob_get_clean();
 	}
 
-	// -------------------------------------------------------------------------
-	// For compability with WordPress before v3.3.
-	// -------------------------------------------------------------------------
-
-	/**
-	 * Contextual Help for WP < v3.3.
-	 *
-	 * Combines the help tabs above into one long help text for the help tab
-	 * when run on WordPress versions before v3.3.
-	 *
-	 * @since 1.0
-	 * @return		string		The Contextual Help
-	 */
-	public function add_help($contextual_help, $screen_id, $screen) {
-		if ( $screen->id == 'settings_page_post-snippets/post-snippets' ) {
-			$contextual_help  = '<h1>'.__( 'Basic', 'post-snippets' ).'</h1>';
-			$contextual_help .= $this->help_basic();
-			$contextual_help .= '<h1>'.__( 'Shortcode', 'post-snippets' ).'</h1>';
-			$contextual_help .= $this->help_shortcode();
-		}
-		return $contextual_help;
-	}
 }
