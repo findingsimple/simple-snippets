@@ -48,6 +48,8 @@ class Simple_Snippets {
 
 	static $admin_screen_id;
 
+	static $snippets;
+
 	public static function init() {
 		global $wp_version;
 
@@ -65,7 +67,7 @@ class Simple_Snippets {
 
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_styles_and_scripts' ) );
 
-		add_action( 'admin_footer', array( __CLASS__, 'add_jquery_ui_dialog' ) );
+		add_action( 'admin_footer', array( __CLASS__, 'snippet_dialog_markup' ) );
 
 		add_action( 'add_meta_boxes', array( __CLASS__, 'add_remove_meta_boxes' ) );
 
@@ -87,25 +89,27 @@ class Simple_Snippets {
 	 */
 	public static function save_snippet_meta( $post_id ) {
 
-		// Cheatin’ uh?
 		if ( ! current_user_can( 'edit_post', $post_id ) && ! current_user_can( 'edit_page', $post_id ) )
 			return $post_id;
 
-		// Meta not submitted
+		/* Meta not submitted */
 		if ( ! isset( $_POST['_snippets_nonce'] ) || ! wp_verify_nonce( $_POST['_snippets_nonce'], __FILE__ ) )
 			return $post_id;
 
 		/* Defaults */
-		$_POST['_snippet_variables']    = ( isset( $_POST['_snippet_variables'] ) ) ? $_POST['_snippet_variables'] : array();
-		$_POST['_snippet_is_shortcode'] = ( isset( $_POST['_snippet_is_shortcode'] ) ) ? true : false;
+		$snippet_variables    = ( isset( $_POST['_snippet_variables'] ) ) ? $_POST['_snippet_variables'] : array();
+		$snippet_is_shortcode = ( isset( $_POST['_snippet_is_shortcode'] ) && 'on' == $_POST['_snippet_is_shortcode'] ) ? 'true' : 'false';
 
 		/* Clear any empty variables (variables need a name but not a default value) */
-		foreach ( $_POST['_snippet_variables'] as $key => $variable_array )
+		foreach ( $snippet_variables as $key => $variable_array ) {
 			if ( empty( $variable_array['variable_name'] ) )
-				unset( $_POST['_snippet_variables'][$key] );
+				unset( $snippet_variables[$key] );
+			else
+				$snippet_variables[$key]['variable_name'] = self::sanitize_variable_name( $variable_array['variable_name'] );
+		}
 
-		update_post_meta( $post_id, '_snippet_variables', $_POST['_snippet_variables'] );
-		update_post_meta( $post_id, '_snippet_is_shortcode', $_POST['_snippet_is_shortcode'] );
+		update_post_meta( $post_id, '_snippet_variables', $snippet_variables );
+		update_post_meta( $post_id, '_snippet_is_shortcode', $snippet_is_shortcode );
 
 	}
 
@@ -127,7 +131,8 @@ class Simple_Snippets {
 	 */
 	public static function snippet_details_meta_box( $post ) { 
 
-		$is_shortcode = ( in_array( get_post_meta( $post->ID, '_snippet_is_shortcode', true ), array( '', true ) ) ) ? true : false;
+		$is_shortcode = ( in_array( get_post_meta( $post->ID, '_snippet_is_shortcode', true ), array( '', 'true' ) ) ) ? 'true' : 'false';
+
 		wp_nonce_field( __FILE__, '_snippets_nonce' );
 
 		$snippet_variables = get_post_meta( $post->ID, '_snippet_variables', true );
@@ -143,7 +148,7 @@ class Simple_Snippets {
 		<h4><?php _e( 'Shortcode' ); ?></h4>
 
 		<label for="_snippet_is_shortcode">
-			<input type="checkbox" name="_snippet_is_shortcode" id="_snippet_is_shortcode" <?php checked( $is_shortcode ); ?>/>
+			<input type="checkbox" name="_snippet_is_shortcode" id="_snippet_is_shortcode" <?php checked( $is_shortcode, 'true' ); ?>/>
 			<?php _e( 'Use snippet as a shortcode', self::$text_domain ) ?>
 		</label>
 
@@ -237,7 +242,7 @@ jQuery(document).ready(function($){
 	 *
 	 * @since 1.0
 	 */
-	function enqueue_styles_and_scripts() {
+	public static function enqueue_styles_and_scripts() {
 
 		$screen = get_current_screen();
 
@@ -356,7 +361,7 @@ QTags.addButton('post_snippets_id', 'snippet', function() {
 	 *
 	 * @since 1.0
 	 */
-	public static function add_jquery_ui_dialog() {
+	public static function snippet_dialog_markup() {
 
 		$screen = get_current_screen();
 
@@ -412,60 +417,82 @@ QTags.addButton('post_snippets_id', 'snippet', function() {
 
 	/**
 	 * Create the functions for shortcodes dynamically and register them
+	 *
+	 * @since 1.0
 	 */
 	public static function create_shortcodes() {
+
 		$snippets = self::get_snippets();
+
 		foreach ( $snippets as $snippet ) {
-
 			// If shortcode is enabled for the snippet, and a snippet has been entered, register it as a shortcode.
-			if ( ! empty( $snippet->post_content ) ) {
-
-				$vars_str = '';
-
-				foreach ( $snippet->variables as $snippet_variable )
-					$vars_str = $vars_str . '"'.$snippet_variable['variable_name'].'" => "'.$snippet_variable['variable_default'].'",';
-
-				add_shortcode( $snippet->post_name, create_function( '$atts, $content=null', 
-							'$shortcode_symbols = array( '.$vars_str.');
-
-							extract( shortcode_atts( $shortcode_symbols, $atts ) );
-
-							$attributes = compact( array_keys( $shortcode_symbols ) );
-
-							// Add enclosed content if available to the attributes array
-							if ( $content != null )
-								$attributes["content"] = $content;
-
-							$snippet = \''. addslashes( wpautop( $snippet->post_content ) ) .'\';
-							$snippet = str_replace( "&", "&amp;", $snippet );
-
-							foreach ( $attributes as $key => $val )
-								$snippet = str_replace( "{".$key."}", $val, $snippet );
-
-							// Strip escaping and execute nested shortcodes
-							$snippet = do_shortcode( stripslashes( $snippet ) );
-
-							return $snippet;' ) );
-			}
+			if ( ! empty( $snippet->post_content ) && $snippet->is_shortcode !== 'false' )
+				add_shortcode( $snippet->post_name, array( __CLASS__, 'shortcode_callback' ) );
 		}
+	}
+
+	/**
+	 * Generates the content for a snippet's shortcode
+	 *
+	 * @since 1.0
+	 */
+	public static function shortcode_callback( $atts, $content = null, $callback ) {
+
+		$snippets = self::get_snippets();
+
+		$shortcode_symbols = array();
+
+		foreach( $snippets[$callback]->variables as $variable )
+			$shortcode_symbols[$variable['variable_name']] = $variable['variable_default'];
+
+		extract( shortcode_atts( $shortcode_symbols, $atts ) );
+
+		$attributes = compact( array_keys( $shortcode_symbols ) );
+
+		// Add enclosed content if available to the attributes array
+		if ( $content != null )
+			$attributes["content"] = $content;
+
+		$snippet = addslashes( wpautop( $snippets[$callback]->post_content ) );
+		$snippet = str_replace( "&", "&amp;", $snippet );
+
+		foreach ( $attributes as $key => $val )
+			$snippet = str_replace( "{".$key."}", $val, $snippet );
+
+		// Strip escaping and execute nested shortcodes
+		$snippet = do_shortcode( stripslashes( $snippet ) );
+
+		return $snippet;
 	}
 
 	/**
 	 * Returns an array of all snippets with their variables and post data.
 	 *
 	 * @since 1.0
-	 * @return array $post_name => $post_content
+	 * @return array $post_name => $post object + variables
 	 */
 	public static function get_snippets(){
-		$snippets = get_posts( array( 'post_type' => self::$post_type_name ) );
 
-		if ( empty( $snippets ) ) 
-			$snippets = array();
+		if ( empty( self::$snippets ) ) {
 
-		foreach ( $snippets as $key => $snippet )
-			$snippets[$key]->variables = get_post_meta( $snippet->ID, '_snippet_variables', true );
+			$snippet_posts = get_posts( array( 'post_type' => self::$post_type_name ) );
 
-		return $snippets;
+			if ( empty( $snippet_posts ) ) 
+				$snippet_posts = array();
+
+			foreach ( $snippet_posts as $key => $snippet ) {
+
+				self::$snippets[$snippet->post_name] = $snippet;
+
+				self::$snippets[$snippet->post_name]->variables = get_post_meta( $snippet->ID, '_snippet_variables', true );
+
+				self::$snippets[$snippet->post_name]->is_shortcode = get_post_meta( $snippet->ID, '_snippet_is_shortcode', true );
+
+			}
+
+		}
+
+		return self::$snippets;
 	}
 
 	/**
@@ -476,7 +503,7 @@ QTags.addButton('post_snippets_id', 'snippet', function() {
 	 */
 	public static function sanitize_variable_name( $variable_name ) {
 
-		$variable_name = str_replace( ' ', '-', sanitize_user( strtolower( $variable_name ), true ) );
+		$variable_name = str_replace( array( ' ', '-', '.', '*', '@' ), '_', sanitize_user( strtolower( $variable_name ), true ) );
 
 		return $variable_name;
 	}
@@ -563,7 +590,8 @@ QTags.addButton('post_snippets_id', 'snippet', function() {
 <p><?php _e( 'You can use variables to dynamically change certain values in your snippet. A variable can also be assigned a default value.', Simple_Snippets::$text_domain ); ?></p>
 
 <h3><?php _e( 'Variable Names', Simple_Snippets::$text_domain ); ?></h3>
-<p><?php _e( 'Variable names should be unique. For best results, a variable name should only contain letters (a-z), numbers (0-9) and hyphens.', Simple_Snippets::$text_domain ); ?></p>
+<p><?php _e( 'Variable names should be unique. For best results, a variable name should only contain letters (a-z), numbers (0-9) and underscores (_).', Simple_Snippets::$text_domain ); ?></p>
+<p><?php _e( 'If you change the name of a variable, you will also need to change the variable name in all shortcodes (so try not to change the name of a variable).', Simple_Snippets::$text_domain ); ?></p>
 
 <h3><?php _e( 'Variable Values', Simple_Snippets::$text_domain ); ?></h3>
 <p><?php _e( 'A variable can be assigned a default value which will be used if no other value is provided.', Simple_Snippets::$text_domain ); ?></p>
