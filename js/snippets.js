@@ -1,6 +1,6 @@
 jQuery(document).ready(function($){
 	var $tabs = $("#snippets-tabs").tabs();
-
+	console.log(SnippetData);
 	$(function() {
 		$( "#snippets-dialog" ).dialog({
 			autoOpen: false,
@@ -15,11 +15,17 @@ jQuery(document).ready(function($){
 
 					var snippetName = $("#snippets-tabs li:eq("+$tabs.tabs('option','selected')+") a").attr('href').replace('#snippet-tab-','');
 
-					var snippetToInsert = SnippetData.shortcodes[snippetName];
+					var snippetToInsert = SnippetData.contentToInsert[snippetName];
+
+					console.log(SnippetData.variables[snippetName]);
 
 					$.each(SnippetData.variables[snippetName],function(name,value){
 						snippetToInsert = snippetToInsert.replace('{'+name+'}', $('#'+snippetName+'_'+name).val());
 					});
+
+					snippetToInsert = $.parseJSON(snippetToInsert);
+
+					console.log(snippetToInsert);
 
 					// HTML editor
 					if (snippets_caller == 'html') {

@@ -261,15 +261,33 @@ jQuery(document).ready(function($){
 
 				$variable_string = '';
 
-				/* Build an array of variable names, defaults & a shortcode string for each variable. */
-				foreach ( $snippet->variables as $key_2 => $variable ) {
+				if ( empty( $snippet->variables ) ) {
 
-					$snippet_data['variables'][$snippet->post_name][self::sanitize_variable_name( $variable['variable_name'] )] = $variable['variable_default'];
+					$snippet_data['variables'][$snippet->post_name] = array();
 
-					$variable_string .= ' ' . self::sanitize_variable_name( $variable['variable_name'] ) . '="{' . self::sanitize_variable_name( $variable['variable_name'] ) . '}"';
+				} else {
+					/* Build an array of variable names, defaults & a shortcode string for each variable. */
+
+					foreach ( $snippet->variables as $key_2 => $variable ) {
+
+						$snippet_data['variables'][$snippet->post_name][self::sanitize_variable_name( $variable['variable_name'] )] = $variable['variable_default'];
+
+						$variable_string .= ' ' . self::sanitize_variable_name( $variable['variable_name'] ) . '="{' . self::sanitize_variable_name( $variable['variable_name'] ) . '}"';
+					}
 				}
 
-				$snippet_data['shortcodes'][$snippet->post_name] = '[' . $snippet->post_name . $variable_string . ']';
+				if ( $snippet->is_shortcode != 'false' ) {
+
+					$snippet_data['contentToInsert'][$snippet->post_name] = '[' . $snippet->post_name . $variable_string . ']';
+
+				} else {
+
+					$snippet_data['contentToInsert'][$snippet->post_name] = str_replace( ']]>', ']]&gt;', apply_filters( 'the_content', $snippet->post_content ) );
+
+				}
+
+				$snippet_data['contentToInsert'][$snippet->post_name] = json_encode( $snippet_data['contentToInsert'][$snippet->post_name] );
+
 			}
 
 			wp_enqueue_script( 'snippets', self::get_url( '/js/snippets.js' ) );
@@ -279,6 +297,9 @@ jQuery(document).ready(function($){
 		}
 
 	}
+
+
+	/* TinyMCE */
 
 	/**
 	 * Add TinyMCE Snippet button.
@@ -301,10 +322,6 @@ jQuery(document).ready(function($){
 
 	/**
 	 * Register a TinyMCE button.
-	 *
-	 * Pushes the snippet TinyMCE button into the array of with button names.
-	 * 'separator' or '|' can be pushed to the array as well. See the link
-	 * for all available TinyMCE controls.
 	 *
 	 * @see wp-includes/class-wp-editor.php
 	 * @link http://www.tinymce.com/wiki.php/Buttons/controls
@@ -411,9 +428,8 @@ QTags.addButton('post_snippets_id', 'snippet', function() {
 <?php
 	}
 
-	// -------------------------------------------------------------------------
-	// Shortcode
-	// -------------------------------------------------------------------------
+
+	/* Shortcode */
 
 	/**
 	 * Create the functions for shortcodes dynamically and register them
@@ -525,6 +541,7 @@ QTags.addButton('post_snippets_id', 'snippet', function() {
 		// Return a content URL for this path & the specified file
 		return content_url( $post_content_path . $file );
 	}
+
 
 	/* Help tabs */
 
