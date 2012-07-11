@@ -261,7 +261,7 @@ jQuery(document).ready(function($){
 
 					$snippet_data['variables'][$snippet->post_name][self::sanitize_variable_name( $variable['variable_name'] )] = $variable['variable_default'];
 
-					$variable_string .= ' ' . $variable['variable_name'] . '="{' . $variable['variable_name'] . '}"';
+					$variable_string .= ' ' . self::sanitize_variable_name( $variable['variable_name'] ) . '="{' . self::sanitize_variable_name( $variable['variable_name'] ) . '}"';
 				}
 
 				$snippet_data['shortcodes'][$snippet->post_name] = '[' . $snippet->post_name . $variable_string . ']';
@@ -325,7 +325,6 @@ jQuery(document).ready(function($){
 		return $plugins;
 	}
 
-
 	/**
 	 * Adds a QuickTag button to the HTML editor.
 	 *
@@ -384,7 +383,7 @@ QTags.addButton('post_snippets_id', 'snippet', function() {
 				<?php foreach ( $snippet->variables as $key_2 => $variable ) : ?>
 
 				<?php $var_name = $snippet->post_name . '_' . self::sanitize_variable_name( $variable['variable_name'] ); ?>
-				<?php error_log('$var_name = ' . print_r( $var_name, true ) ); ?>
+
 				<?php if ( 1 == preg_match( '/^\{.*?\}$/', $variable['variable_default'] ) ) : // We want a select box ?>
 				<label for="<?php echo $var_name; ?>"><?php echo $variable['variable_name'] ?>:</label>
 				<select id="<?php echo $var_name; ?>" name="<?php echo $var_name; ?>">
