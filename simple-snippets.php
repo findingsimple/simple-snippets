@@ -249,8 +249,6 @@ jQuery(document).ready(function($){
 			/* Prepare the snippets and shortcodes into javascript variables so they can be inserted into the editor and get the variables replaced with user defined strings. */
 			$snippets = self::get_snippets();
 
-			$snippet_data = array( 'pluginName' => self::TINYMCE_PLUGIN_NAME );
-
 			foreach ( $snippets as $key => $snippet ) {
 
 				$variable_string = '';
