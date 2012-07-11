@@ -384,7 +384,7 @@ QTags.addButton('post_snippets_id', 'snippet', function() {
 				<?php foreach ( $snippet->variables as $key_2 => $variable ) : ?>
 
 				<?php $var_name = $snippet->post_name . '_' . self::sanitize_variable_name( $variable['variable_name'] ); ?>
-
+				<?php error_log('$var_name = ' . print_r( $var_name, true ) ); ?>
 				<?php if ( 1 == preg_match( '/^\{.*?\}$/', $variable['variable_default'] ) ) : // We want a select box ?>
 				<label for="<?php echo $var_name; ?>"><?php echo $variable['variable_name'] ?>:</label>
 				<select id="<?php echo $var_name; ?>" name="<?php echo $var_name; ?>">
@@ -477,7 +477,7 @@ QTags.addButton('post_snippets_id', 'snippet', function() {
 	 */
 	public static function sanitize_variable_name( $variable_name ) {
 
-		$variable_name = str_replace( ' ', '-', sanitize_user( $variable_name, true ) );
+		$variable_name = str_replace( ' ', '-', sanitize_user( strtolower( $variable_name ), true ) );
 
 		return $variable_name;
 	}

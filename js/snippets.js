@@ -22,10 +22,10 @@ jQuery(document).ready(function($){
 					});
 
 					// HTML editor
-					if (post_snippets_caller == 'html') {
+					if (snippets_caller == 'html') {
 						QTags.insertContent(snippetToInsert);
 					} else { // Visual Editor
-						post_snippets_canvas.execCommand('mceInsertContent', false, snippetToInsert);
+						snippets_canvas.execCommand('mceInsertContent', false, snippetToInsert);
 					}
 				}
 			},
@@ -35,5 +35,5 @@ jQuery(document).ready(function($){
 });
 
 // Global variables to keep track of the canvas instance and which editor opened the snippet dialog
-var post_snippets_canvas;
-var post_snippets_caller = '';
+var snippets_canvas;
+var snippets_caller = '';

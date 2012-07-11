@@ -8,8 +8,8 @@
 
 			// Register the snippet command
 			ed.addCommand('mce_simple_snippets', function() {
-				simple_snippets_canvas = ed;
-				simple_snippets_caller = 'visual';
+				snippets_canvas = ed;
+				snippets_caller = 'visual';
 				jQuery( "#snippets-dialog" ).dialog( "open" );
 			});
 
