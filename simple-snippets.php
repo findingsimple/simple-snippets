@@ -57,10 +57,12 @@ class Simple_Snippets {
 
 		self::create_shortcodes();
 
-		add_action( 'admin_init', array( __CLASS__, 'enqueue_styles_and_scripts' ) );
 		add_action( 'admin_init', array( __CLASS__, 'add_tinymce_button' ) );
-		add_action( 'admin_head', array( __CLASS__, 'jquery_ui_dialog' ) );
+
+		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_styles_and_scripts' ) );
+
 		add_action( 'admin_footer', array( __CLASS__, 'add_jquery_ui_dialog' ) );
+
 		add_action( 'add_meta_boxes', array( __CLASS__, 'add_remove_meta_boxes' ) );
 
 		add_action( 'admin_print_footer_scripts', array( __CLASS__, 'add_quicktag_button' ), 100 );
@@ -233,12 +235,43 @@ jQuery(document).ready(function($){
 	 * @since 1.0
 	 */
 	function enqueue_styles_and_scripts() {
-		wp_enqueue_script( 'jquery-ui-dialog' );
-		wp_enqueue_script( 'jquery-ui-tabs' );
-		wp_enqueue_style( 'wp-jquery-ui-dialog' );
 
-		# Adds the CSS stylesheet for the jQuery UI dialog
-		wp_enqueue_style( 'snippets', self::get_url( '/css/admin.css' ) );
+		$screen = get_current_screen();
+
+		if ( $screen->base == 'post' ) {
+
+			wp_enqueue_script( 'jquery-ui-dialog' );
+			wp_enqueue_script( 'jquery-ui-tabs' );
+
+			wp_enqueue_style( 'wp-jquery-ui-dialog' );
+			wp_enqueue_style( 'snippets', self::get_url( '/css/admin.css' ) );
+
+			/* Prepare the snippets and shortcodes into javascript variables so they can be inserted into the editor and get the variables replaced with user defined strings. */
+			$snippets = self::get_snippets();
+
+			$snippet_data = array( 'pluginName' => self::TINYMCE_PLUGIN_NAME );
+
+			foreach ( $snippets as $key => $snippet ) {
+
+				$variable_string = '';
+
+				/* Build an array of variable names, defaults & a shortcode string for each variable. */
+				foreach ( $snippet->variables as $key_2 => $variable ) {
+
+					$snippet_data['variables'][$snippet->post_name][self::sanitize_variable_name( $variable['variable_name'] )] = $variable['variable_default'];
+
+					$variable_string .= ' ' . $variable['variable_name'] . '="{' . $variable['variable_name'] . '}"';
+				}
+
+				$snippet_data['shortcodes'][$snippet->post_name] = '[' . $snippet->post_name . $variable_string . ']';
+			}
+
+			wp_enqueue_script( 'snippets', self::get_url( '/js/snippets.js' ) );
+
+			wp_localize_script( 'snippets', 'SnippetData', $snippet_data );
+
+		}
+
 	}
 
 	/**
@@ -313,45 +346,6 @@ QTags.addButton('post_snippets_id', 'snippet', function() {
 });
 </script>
 <?php
-	}
-
-
-	/**
-	 * jQuery control for the dialog and Javascript needed to insert snippets into the editor
-	 *
-	 * @since 1.0
-	 */
-	public static function jquery_ui_dialog() {
-
-		if ( function_exists( 'get_current_screen' ) ) {
-			$screen = get_current_screen();
-			if ( $screen->base != 'post' )
-				return;
-		}
-
-		/* Prepare the snippets and shortcodes into javascript variables so they can be inserted into the editor and get the variables replaced with user defined strings. */
-		$snippets = self::get_snippets();
-
-		$snippet_data = array( 'pluginName' => self::TINYMCE_PLUGIN_NAME );
-
-		foreach ( $snippets as $key => $snippet ) {
-
-			$variable_string = '';
-
-			/* Build an array of variable names, defaults & a shortcode string for each variable. */
-			foreach ( $snippet->variables as $key_2 => $variable ) {
-
-				$snippet_data['variables'][$snippet->post_name][self::sanitize_variable_name( $variable['variable_name'] )] = $variable['variable_default'];
-
-				$variable_string .= ' ' . $variable['variable_name'] . '="{' . $variable['variable_name'] . '}"';
-			}
-
-			$snippet_data['shortcodes'][$snippet->post_name] = '[' . $snippet->post_name . $variable_string . ']';
-		}
-
-		wp_enqueue_script( 'snippets', self::get_url( '/js/snippets.js' ) );
-
-		wp_localize_script( 'snippets', 'SnippetData', $snippet_data );
 	}
 
 	/**

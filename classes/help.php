@@ -93,8 +93,8 @@ class Simple_Snippets_Help {
 <p><?php _e( 'A variable can be assigned a default value which will be used if no other value is provided.', Simple_Snippets::$text_domain ); ?></p>
 
 <h3><?php _e( 'Variable Value Select Box', Simple_Snippets::$text_domain ); ?></h3>
-<p><?php _e( 'To constrain the available values for a variable to a list of items, insert a comma separated list in the <em>Default Value/s</em> field.', Simple_Snippets::$text_domain ); ?></p>
-<p><?php _e( 'For example, entering <code>ACT,NSW,NT,QLD,SA,TAS,VIC,WA</code> in the <em>Default Value/s</em> would cause a select box with States and Territories to be displayed when inserting a snippet.', Simple_Snippets::$text_domain ); ?></p>
+<p><?php _e( 'To constrain the available values for a variable to a list of items, insert a comma separated list of values enclosed in curly braces in the <em>Default Value/s</em> field.', Simple_Snippets::$text_domain ); ?></p>
+<p><?php _e( 'For example, entering <code>{ACT,NSW,NT,QLD,SA,TAS,VIC,WA}</code> in the <em>Default Value/s</em> field would display a select box with States and Territories when inserting a snippet.', Simple_Snippets::$text_domain ); ?></p>
 
 <h3><?php _e( 'Using a Variable', Simple_Snippets::$text_domain ); ?></h3>
 <p><?php _e( 'To use a variable in a snippet, insert the variable name enclosed in curly braces. For example, to use a variable named <code>var_one</code>, add <code>{var_one}</code> to your snippet.', Simple_Snippets::$text_domain ); ?></p>
