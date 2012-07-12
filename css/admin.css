@@ -34,7 +34,7 @@
 	background: #FFF;
 	color: #000;
 	z-index: 2;
-/*	border-bottom-color: #FFF; */
+	border-bottom-color: #FFF;
 }
 #snippets-tabs .ui-tabs-nav:before {
 	position: absolute;
@@ -108,9 +108,18 @@
 	margin: 4px 0;
 }
 #snippets-dialog input {
-	width: 85%;
 	float: right;
+	width: 85%;
 	margin-top: -3px;
+}
+#snippets-dialog label.select {
+	float: left;
+	width: auto;
+}
+#snippets-dialog select {
+	float: left;
+	width: auto;
+	margin-left: 1em;
 }
 
 /* Add Snippet Page */
@@ -119,7 +128,7 @@
 	display: inline-block;
 	margin-bottom: 6px;
 }
-#snippet-variables input[type="text"] {
+#snippet-variables input {
 	width: 62%;
 	margin-top: -2px;
 	float: right;

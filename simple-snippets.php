@@ -407,7 +407,7 @@ QTags.addButton('post_snippets_id', 'snippet', function() {
 				<?php $var_name = $snippet->post_name . '_' . self::sanitize_variable_name( $variable['variable_name'] ); ?>
 
 				<?php if ( 1 == preg_match( '/^\{.*?\}$/', $variable['variable_default'] ) ) : // We want a select box ?>
-				<label for="<?php echo $var_name; ?>"><?php echo $variable['variable_name'] ?>:</label>
+				<label for="<?php echo $var_name; ?>" class="select"><?php echo $variable['variable_name'] ?>:</label>
 				<select id="<?php echo $var_name; ?>" name="<?php echo $var_name; ?>">
 					<?php foreach ( explode( ',', substr( $variable['variable_default'], 1, -1 ) ) as $value ) : ?>
 					<option value="<?php echo $value; ?>"><?php echo $value; ?></option>
