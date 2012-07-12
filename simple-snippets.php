@@ -371,11 +371,13 @@ QTags.addButton('post_snippets_id', 'snippet', function() {
 	 * @since 1.0
 	 */
 	public static function snippet_dialog_markup() {
+		global $post_id;
 
 		$screen = get_current_screen();
 
 		if ( $screen->base != 'post' )
 			return;
+
 ?>
 <div class="hidden">
 	<div id="snippets-dialog" title="Snippets">
@@ -383,11 +385,13 @@ QTags.addButton('post_snippets_id', 'snippet', function() {
 			<ul>
 			<?php $snippets = self::get_snippets(); ?>
 			<?php foreach ( $snippets as $key => $snippet ) : ?>
+				<?php if ( $screen->id == self::$admin_screen_id && $post_id == $snippet->ID ) continue; // don't add the snippet to itself ?>
 				<li><a href="#snippet-tab-<?php echo $snippet->post_name; ?>"><?php echo $snippet->post_title; ?></a></li>
 			<?php endforeach; ?>
 			</ul>
 
 			<?php foreach ( $snippets as $key => $snippet ) : ?>
+			<?php if ( $screen->id == self::$admin_screen_id && $post_id == $snippet->ID ) continue; // don't add the snippet to itself ?>
 			<div id="snippet-tab-<?php echo $snippet->post_name; ?>" class="snippet-tab">
 
 				<?php if ( ! empty( $snippet->post_excerpt ) ) : ?>
