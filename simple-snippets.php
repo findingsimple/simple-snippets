@@ -48,7 +48,7 @@ class Simple_Snippets {
 
 	static $admin_screen_id;
 
-	static $snippets;
+	static $snippets = array();
 
 	public static function init() {
 		global $wp_version;
@@ -488,9 +488,6 @@ QTags.addButton('post_snippets_id', 'snippet', function() {
 		if ( empty( self::$snippets ) ) {
 
 			$snippet_posts = get_posts( array( 'post_type' => self::$post_type_name ) );
-
-			if ( empty( $snippet_posts ) ) 
-				$snippet_posts = array();
 
 			foreach ( $snippet_posts as $key => $snippet ) {
 
