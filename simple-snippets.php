@@ -63,7 +63,9 @@ class Simple_Snippets {
 
 		self::create_shortcodes();
 
-		add_action( 'admin_init', array( __CLASS__, 'add_tinymce_button' ) );
+		add_filter( 'mce_external_plugins', array( __CLASS__, 'register_tinymce_plugin' ) );
+
+		add_filter( 'mce_buttons', array( __CLASS__, 'add_remove_tinymce_buttons' ) );
 
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_styles_and_scripts' ) );
 
@@ -302,33 +304,23 @@ jQuery(document).ready(function($){
 	/* TinyMCE */
 
 	/**
-	 * Add TinyMCE Snippet button.
-	 *
-	 * @since 1.0
-	 */
-	public static function add_tinymce_button() {
-
-		// Don't bother doing this stuff if the current user lacks permissions
-		if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'edit_pages' ) )
-			return;
-
-		// Add only in Rich Editor mode
-		if ( get_user_option( 'rich_editing' ) == 'true' ) {
-			add_filter( 'mce_external_plugins', array( __CLASS__, 'register_tinymce_plugin' ) );
-			add_filter( 'mce_buttons', array( __CLASS__, 'register_tinymce_button' ) );
-		}
-
-	}
-
-	/**
 	 * Register a TinyMCE button.
 	 *
 	 * @see wp-includes/class-wp-editor.php
 	 * @link http://www.tinymce.com/wiki.php/Buttons/controls
 	 * @since 1.0
 	 */
-	public static function register_tinymce_button( $buttons ) {
+	public static function add_remove_tinymce_buttons( $buttons ) {
 
+		$screen = get_current_screen();
+
+		// Snippet TinyMCE Editor, remove "read more" & "next page" buttons
+		if ( $screen->id == self::$admin_screen_id )
+			foreach( $buttons as $key => $name )
+				if ( in_array( $name, array( 'wp_more', 'wp_page' ) ) )
+					unset( $buttons[$key] );
+
+		// Add the Snippet button to all editors
 		array_push( $buttons, 'separator', self::TINYMCE_PLUGIN_NAME );
 
 		return $buttons;
