@@ -380,7 +380,7 @@ QTags.addButton('post_snippets_id', 'snippet', function() {
 
 ?>
 <div class="hidden">
-	<div id="snippets-dialog" title="Snippets">
+	<div id="snippets-dialog" title="Insert Snippet">
 		<div id="snippets-tabs">
 			<ul>
 			<?php $snippets = self::get_snippets(); ?>
