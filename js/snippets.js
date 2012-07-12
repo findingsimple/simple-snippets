@@ -17,15 +17,11 @@ jQuery(document).ready(function($){
 
 					var snippetToInsert = SnippetData.contentToInsert[snippetName];
 
-					console.log(SnippetData.variables[snippetName]);
-
 					$.each(SnippetData.variables[snippetName],function(name,value){
 						snippetToInsert = snippetToInsert.replace('{'+name+'}', $('#'+snippetName+'_'+name).val());
 					});
 
 					snippetToInsert = $.parseJSON(snippetToInsert);
-
-					console.log(snippetToInsert);
 
 					// HTML editor
 					if (snippets_caller == 'html') {
