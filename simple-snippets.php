@@ -588,8 +588,9 @@ QTags.addButton('post_snippets_id', 'snippet', function() {
 <p><?php _e( 'Include an optional explanation or description of the snippet. If filled out, the description will be displayed in insert snippet window of the post editor.', Simple_Snippets::$text_domain); ?></p>
 
 <h2><?php _e( 'Shortcode', Simple_Snippets::$text_domain ); ?></h2>
-<p><?php _e( 'When enabling the shortcode checkbox, the snippet is no longer inserted into a post as HTML, instead it is inserted as a shortcode. The advantage of a shortcode is that you can insert a block of text or code in many places on the site, and update the content from one single place.', Simple_Snippets::$text_domain ); ?></p>
+<p><?php _e( 'When the shortcode checkbox is checked, the snippet is no longer inserted into a post as HTML, instead it is inserted as a shortcode. The advantage of a shortcode is that you can insert a snippet in many places on the site, and the snippet content will update dynamically whenever the snippet is changed.', Simple_Snippets::$text_domain ); ?></p>
 <p><?php _e( 'The name to use the shortcode is the same as the title of the snippet (with spaces replaced by hypehens). When inserting a snippet as a shortcode, the shortcode tag will be inserted into the post instead of the HTML content i.e. [snippet-name].', Simple_Snippets::$text_domain ); ?></p>
+<p><?php _e( 'If changing a snippet from a shortcode to HTML or vice versa, you will also need to change where the snippet has been inserted.', Simple_Snippets::$text_domain ); ?></p>
 
 <?php 
 		return ob_get_clean();
@@ -607,8 +608,8 @@ QTags.addButton('post_snippets_id', 'snippet', function() {
 <p><?php _e( 'You can use variables to dynamically change certain values in your snippet. A variable can also be assigned a default value.', Simple_Snippets::$text_domain ); ?></p>
 
 <h3><?php _e( 'Variable Names', Simple_Snippets::$text_domain ); ?></h3>
-<p><?php _e( 'Variable names should be unique. For best results, a variable name should only contain letters (a-z), numbers (0-9) and underscores (_).', Simple_Snippets::$text_domain ); ?></p>
-<p><?php _e( 'If you change the name of a variable, you will also need to change the variable name in all shortcodes (so try not to change the name of a variable).', Simple_Snippets::$text_domain ); ?></p>
+<p><?php _e( 'Variable names must be unique and should contain only letters (a-z), numbers (0-9) and underscores (_).', Simple_Snippets::$text_domain ); ?></p>
+<p><?php _e( 'If you change the name of a variable, you will also need to change the variable name where you have inserted the snippet (so try not to change the name of a variable).', Simple_Snippets::$text_domain ); ?></p>
 
 <h3><?php _e( 'Variable Values', Simple_Snippets::$text_domain ); ?></h3>
 <p><?php _e( 'A variable can be assigned a default value which will be used if no other value is provided.', Simple_Snippets::$text_domain ); ?></p>
