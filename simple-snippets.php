@@ -73,8 +73,6 @@ class Simple_Snippets {
 
 		add_action( 'add_meta_boxes', array( __CLASS__, 'add_remove_meta_boxes' ) );
 
-		add_action( 'admin_print_footer_scripts', array( __CLASS__, 'add_quicktag_button' ), 100 );
-
 		add_action( 'save_post', array( __CLASS__, 'save_snippet_meta' ) );
 
 		// In context help 
@@ -337,29 +335,6 @@ jQuery(document).ready(function($){
 		$plugins[self::TINYMCE_PLUGIN_NAME] = self::get_url( '/tinymce/editor_plugin.js', __FILE__ );
 
 		return $plugins;
-	}
-
-	/**
-	 * Adds a QuickTag button to the HTML editor.
-	 *
-	 * @see wp-includes/js/quicktags.dev.js -> qt.addButton()
-	 * @since 1.0
-	 */
-	public static function add_quicktag_button() {
-
-		if ( function_exists( 'get_current_screen' ) ) {
-			$screen = get_current_screen();
-			if ( $screen->base != 'post' )
-				return;
-		}
-?>
-<script type="text/javascript" charset="utf-8">
-QTags.addButton('post_snippets_id', 'snippet', function() {
-	post_snippets_caller = 'html';
-	jQuery( "#snippets-dialog" ).dialog( "open" );
-});
-</script>
-<?php
 	}
 
 	/**

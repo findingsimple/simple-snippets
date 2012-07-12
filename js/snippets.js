@@ -34,6 +34,11 @@ jQuery(document).ready(function($){
 			width: 560,
 		});
 	});
+
+	QTags.addButton('simple_snippets_id','snippet',function(){
+		snippets_caller = 'html';
+		jQuery('#snippets-dialog').dialog('open');
+	});
 });
 
 // Global variables to keep track of the canvas instance and which editor opened the snippet dialog
