@@ -1,6 +1,6 @@
 jQuery(document).ready(function($){
 	var $tabs = $("#snippets-tabs").tabs();
-	console.log(SnippetData);
+
 	$(function() {
 		$( "#snippets-dialog" ).dialog({
 			autoOpen: false,
