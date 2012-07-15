@@ -112,6 +112,12 @@
 	width: 85%;
 	margin-top: -3px;
 }
+#snippets-dialog .select-wrap {
+	float: left;
+	width:  100%;
+	clear: both;
+	margin-bottom: 5px;
+}
 #snippets-dialog label.select {
 	float: left;
 	width: auto;
