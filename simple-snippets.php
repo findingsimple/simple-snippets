@@ -206,7 +206,7 @@ jQuery(document).ready(function($){
 		$labels = array(
 			'name'               => _x( 'Snippets', 'post type general name', self::$text_domain ),
 			'singular_name'      => _x( 'Snippet', 'post type singular name', self::$text_domain ),
-			'add_new'            => _x( 'Add New', 'book' ),
+			'add_new'            => _x( 'Add New', self::$text_domain ),
 			'add_new_item'       => __( 'Add New Snippet', self::$text_domain ),
 			'edit_item'          => __( 'Edit Snippet', self::$text_domain ),
 			'new_item'           => __( 'New Snippet', self::$text_domain ),
