@@ -453,12 +453,17 @@ class Simple_Snippets {
 
 		$attributes = compact( array_keys( $shortcode_symbols ) );
 
-		$snippet = str_replace( "&", "&amp;", addslashes( wpautop( $snippets[$callback]->post_content ) ) );
+		$snippet = str_replace( "&", "&amp;", addslashes( $snippets[$callback]->post_content ) );
 
-		// Get the first p tag to make sure it's an opening tag, if it is a closing tag, append an opening tag, works around a bug in wpautop()
+		// Get the first <p> tag to make sure it's an opening tag, if it is a closing tag, prepend an opening tag, works around a bug in wpautop()
 		if ( preg_match( '/<(.*?)p("[^"]*"|\'[^\']*\'|[^\'">])*>/', $_content, $matches ) )
 			if ( strpos( $matches[0], '/' ) == 1 )
 				$_content = '<p>' . $_content;
+
+		// Get the last <p> tag to make sure it's closing tag, if it is an opening tag, append a closing tag, works around a bug in wpautop()
+		if ( preg_match( '/<(.*?)p("[^"]*"|\'[^\']*\'|[^\'">])*>.*?$/', $_content, $matches ) )
+			if ( strpos( $matches[0], '/' ) != 1 )
+				$_content = $_content . '</p>';
 
 		// Add enclosed content to variables
 		$attributes['_content'] = $_content;
@@ -468,6 +473,8 @@ class Simple_Snippets {
 
 		// Strip escaping and execute nested shortcodes
 		$snippet = do_shortcode( stripslashes( $snippet ) );
+
+		$snippet = wpautop( $snippet );
 
 		return $snippet;
 	}
