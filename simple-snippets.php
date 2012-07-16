@@ -206,7 +206,7 @@ jQuery(document).ready(function($){
 		$labels = array(
 			'name'               => _x( 'Snippets', 'post type general name', self::$text_domain ),
 			'singular_name'      => _x( 'Snippet', 'post type singular name', self::$text_domain ),
-			'add_new'            => _x( 'Add New', 'book' ),
+			'add_new'            => _x( 'Add New', self::$text_domain ),
 			'add_new_item'       => __( 'Add New Snippet', self::$text_domain ),
 			'edit_item'          => __( 'Edit Snippet', self::$text_domain ),
 			'new_item'           => __( 'New Snippet', self::$text_domain ),
@@ -386,12 +386,14 @@ jQuery(document).ready(function($){
 				<?php $var_name = $snippet->post_name . '_' . self::sanitize_variable_name( $variable['variable_name'] ); ?>
 
 				<?php if ( 1 == preg_match( '/^\{.*?\}$/', $variable['variable_default'] ) ) : // We want a select box ?>
+				<div class="select-wrap">
 				<label for="<?php echo $var_name; ?>" class="select"><?php echo $variable['variable_name'] ?>:</label>
 				<select id="<?php echo $var_name; ?>" name="<?php echo $var_name; ?>">
 					<?php foreach ( explode( ',', substr( $variable['variable_default'], 1, -1 ) ) as $value ) : ?>
 					<option value="<?php echo $value; ?>"><?php echo $value; ?></option>
 					<?php endforeach; ?>
 				</select>
+				</div>
 				<?php else : ?>
 				<label for="<?php echo $var_name; ?>"><?php echo $variable['variable_name'] ?>:
 					<input type="text" id="<?php echo $var_name; ?>" name="<?php echo $var_name; ?>" value="<?php echo $variable['variable_default'] ?>" />
