@@ -442,7 +442,6 @@ class Simple_Snippets {
 	 */
 	public static function shortcode_callback( $atts, $content = '', $callback ) {
 
-		error_log( 'in shortcode_callback $content = ' . print_r( $content, true ) );
 		$snippets = self::get_snippets();
 
 		$shortcode_symbols = array();
