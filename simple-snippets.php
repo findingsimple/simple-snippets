@@ -103,6 +103,7 @@ class Simple_Snippets {
 		/* Defaults */
 		$snippet_variables    = ( isset( $_POST['_snippet_variables'] ) ) ? $_POST['_snippet_variables'] : array();
 		$snippet_is_shortcode = ( isset( $_POST['_snippet_is_shortcode'] ) && 'on' == $_POST['_snippet_is_shortcode'] ) ? 'true' : 'false';
+		$snippet_use_content  = ( isset( $_POST['_snippet_use_content'] ) && 'on' == $_POST['_snippet_use_content'] ) ? 'true' : 'false';
 
 		/* Clear any empty variables (variables need a name but not a default value) */
 		foreach ( $snippet_variables as $key => $variable_array ) {
@@ -114,6 +115,7 @@ class Simple_Snippets {
 
 		update_post_meta( $post_id, '_snippet_variables', $snippet_variables );
 		update_post_meta( $post_id, '_snippet_is_shortcode', $snippet_is_shortcode );
+		update_post_meta( $post_id, '_snippet_use_content', $snippet_use_content );
 
 	}
 
@@ -137,6 +139,8 @@ class Simple_Snippets {
 
 		$is_shortcode = ( in_array( get_post_meta( $post->ID, '_snippet_is_shortcode', true ), array( '', 'true' ) ) ) ? 'true' : 'false';
 
+		$use_content = ( in_array( get_post_meta( $post->ID, '_snippet_use_content', true ), array( '', 'true' ) ) ) ? 'true' : 'false';
+
 		wp_nonce_field( __FILE__, '_snippets_nonce' );
 
 		$snippet_variables = get_post_meta( $post->ID, '_snippet_variables', true );
@@ -156,6 +160,15 @@ class Simple_Snippets {
 			<?php _e( 'Use snippet as a shortcode', self::$text_domain ) ?>
 		</label>
 
+		<div class="use-snippet-content">
+			<h4><?php _e( 'Content' ); ?></h4>
+
+			<label for="_snippet_use_content">
+				<input type="checkbox" name="_snippet_use_content" id="_snippet_use_content" <?php checked( $use_content, 'true' ); ?>/>
+				<?php _e( 'Allow content in the snippet shortcode', self::$text_domain ) ?>
+			</label>
+		</div>
+
 		<h4><?php _e( 'Variables' ); ?></h4>
 
 		<fieldset id="snippet-variables">
@@ -172,32 +185,6 @@ class Simple_Snippets {
 		</fieldset>
 
 		<input type="button" id="snippet_variable_adder" value="<?php _e( 'Add a Variable', self::$text_domain ); ?>" class="button"/>
-
-<script type="text/javascript">
-jQuery(document).ready(function($){
-	$('#snippet_variable_adder').click(function(){
-		var elementCount = $('#snippet-variables fieldset').length,
-			oldElementID = elementCount - 1,
-			newFieldset  = $('#snippet-variables fieldset:last').clone();
-
-		// Clear values
-		newFieldset.find('input').val('');
-
-		// Update the attributes
-		$.each(['variable_name','variable_default'],function(index,keyName){
-			newFieldset.find('[name="_snippet_variables['+oldElementID+']['+keyName+']"]').attr({
-				'id': '_snippet_variables['+elementCount+']['+keyName+']',
-				'name': '_snippet_variables['+elementCount+']['+keyName+']'
-			});
-			newFieldset.find('[for="_snippet_variables['+oldElementID+']['+keyName+']"]').attr({
-				'for': '_snippet_variables['+elementCount+']['+keyName+']'
-			});
-		});
-
-		$('#snippet-variables fieldset:last').after(newFieldset);
-	});
-});
-</script>
 <?php
 	}
 
@@ -275,19 +262,26 @@ jQuery(document).ready(function($){
 
 						$variable_string .= ' ' . self::sanitize_variable_name( $variable['variable_name'] ) . '="{' . self::sanitize_variable_name( $variable['variable_name'] ) . '}"';
 					}
+
+					if ( $snippet->use_content != 'false' )
+						$snippet_data['variables'][$snippet->post_name]['_content'] = '';
+
 				}
 
 				if ( $snippet->is_shortcode != 'false' ) {
 
-					$snippet_data['contentToInsert'][$snippet->post_name] = '[' . $snippet->post_name . $variable_string . ']';
+					$snippet_data['snippetsToInsert'][$snippet->post_name] = '[' . $snippet->post_name . $variable_string . ']';
+
+					if ( $snippet->use_content != 'false' )
+						$snippet_data['snippetsToInsert'][$snippet->post_name] .= '{_content}[/' . $snippet->post_name . ']';
 
 				} else {
 
-					$snippet_data['contentToInsert'][$snippet->post_name] = str_replace( ']]>', ']]&gt;', apply_filters( 'the_content', $snippet->post_content ) );
+					$snippet_data['snippetsToInsert'][$snippet->post_name] = str_replace( ']]>', ']]&gt;', apply_filters( 'the_content', $snippet->post_content ) );
 
 				}
 
-				$snippet_data['contentToInsert'][$snippet->post_name] = json_encode( $snippet_data['contentToInsert'][$snippet->post_name] );
+				$snippet_data['snippetsToInsert'][$snippet->post_name] = json_encode( $snippet_data['snippetsToInsert'][$snippet->post_name] );
 
 			}
 
@@ -361,7 +355,7 @@ jQuery(document).ready(function($){
 		<div id="snippets-tabs">
 			<nav id="snippet-selector">
 				<label for="snippet-select">
-					<?php _e( 'Please select a snippet to insert:', Simple_Snippets::$text_domain ); ?>
+					<?php _e( 'Please select a snippet to insert:', self::$text_domain ); ?>
 					<select id="snippet-select" name="snippet-select">
 						<?php foreach ( $snippets as $key => $snippet ) : ?>
 							<?php if ( $screen->id == self::$admin_screen_id && $post_id == $snippet->ID ) continue; // don't add the snippet to itself ?>
@@ -387,23 +381,29 @@ jQuery(document).ready(function($){
 
 				<?php foreach ( $snippet->variables as $key_2 => $variable ) : ?>
 
-				<?php $var_name = $snippet->post_name . '_' . self::sanitize_variable_name( $variable['variable_name'] ); ?>
+				<?php $variable_id    = $snippet->post_name . '_' . self::sanitize_variable_name( $variable['variable_name'] ); ?>
+				<?php $variable_label = ucwords( str_replace( '_', ' ', $variable['variable_name'] ) ); ?>
 
 				<?php if ( 1 == preg_match( '/^\{.*?\}$/', $variable['variable_default'] ) ) : // We want a select box ?>
 				<div class="select-wrap">
-				<label for="<?php echo $var_name; ?>" class="select"><?php echo $variable['variable_name'] ?>:</label>
-				<select id="<?php echo $var_name; ?>" name="<?php echo $var_name; ?>">
+				<label for="<?php echo $variable_id; ?>" class="select"><?php echo $variable_label; ?>:</label>
+				<select id="<?php echo $variable_id; ?>" name="<?php echo $variable_id; ?>">
 					<?php foreach ( explode( ',', substr( $variable['variable_default'], 1, -1 ) ) as $value ) : ?>
 					<option value="<?php echo $value; ?>"><?php echo $value; ?></option>
 					<?php endforeach; ?>
 				</select>
 				</div>
 				<?php else : ?>
-				<label for="<?php echo $var_name; ?>"><?php echo $variable['variable_name'] ?>:
-					<input type="text" id="<?php echo $var_name; ?>" name="<?php echo $var_name; ?>" value="<?php echo $variable['variable_default'] ?>" />
+				<label for="<?php echo $variable_id; ?>"><?php echo $variable_label; ?>:
+					<input type="text" id="<?php echo $variable_id; ?>" name="<?php echo $variable_id; ?>" value="<?php echo $variable['variable_default'] ?>" />
 				</label>
 				<?php endif; ?>
 				<?php endforeach; ?>
+				<?php if ( $snippet->use_content != 'false' ) : ?>
+				<label for="<?php echo $snippet->post_name . '__content'; ?>" class="snippet-content"><?php _e( 'Content:', self::$text_domain ); ?>
+					<textarea id="<?php echo $snippet->post_name . '__content'; ?>" name="<?php echo $snippet->post_name . '__content'; ?>"></textarea>
+				</label>
+				<?php endif; ?>
 			</div><!-- #ps-tabs-<?php echo $key; ?> -->
 			<?php endforeach; ?>
 
@@ -439,6 +439,7 @@ jQuery(document).ready(function($){
 	 */
 	public static function shortcode_callback( $atts, $content = null, $callback ) {
 
+		error_log( 'in shortcode_callback $content = ' . print_r( $content, true ) );
 		$snippets = self::get_snippets();
 
 		$shortcode_symbols = array();
@@ -450,15 +451,15 @@ jQuery(document).ready(function($){
 
 		$attributes = compact( array_keys( $shortcode_symbols ) );
 
-		// Add enclosed content if available to the attributes array
-		if ( $content != null )
-			$attributes["content"] = $content;
-
 		$snippet = addslashes( wpautop( $snippets[$callback]->post_content ) );
 		$snippet = str_replace( "&", "&amp;", $snippet );
 
 		foreach ( $attributes as $key => $val )
 			$snippet = str_replace( "{".$key."}", $val, $snippet );
+
+		// Add enclosed content if any
+		if ( $content != null )
+			$snippet .= $content;
 
 		// Strip escaping and execute nested shortcodes
 		$snippet = do_shortcode( stripslashes( $snippet ) );
@@ -485,6 +486,8 @@ jQuery(document).ready(function($){
 				self::$snippets[$snippet->post_name]->variables = get_post_meta( $snippet->ID, '_snippet_variables', true );
 
 				self::$snippets[$snippet->post_name]->is_shortcode = get_post_meta( $snippet->ID, '_snippet_is_shortcode', true );
+
+				self::$snippets[$snippet->post_name]->use_content = get_post_meta( $snippet->ID, '_snippet_use_content', true );
 
 			}
 
@@ -566,13 +569,13 @@ jQuery(document).ready(function($){
 
 			$screen->add_help_tab( array(
 				'id'      => 'basic-plugin-help',
-				'title'   => __( 'Basic', Simple_Snippets::$text_domain ),
+				'title'   => __( 'Basic', self::$text_domain ),
 				'content' => self::help_tab_basic()
 			) );
 
 			$screen->add_help_tab( array(
 				'id'      => 'variables-plugin-help',
-				'title'   => __( 'Variables', Simple_Snippets::$text_domain ),
+				'title'   => __( 'Variables', self::$text_domain ),
 				'content' => self::help_tab_variables()
 			) );
 		}
@@ -586,19 +589,19 @@ jQuery(document).ready(function($){
 	 */
 	public static function help_tab_basic() {
 		ob_start(); ?>
-<h2><?php _e( 'Title', Simple_Snippets::$text_domain ); ?></h2>
-<p><?php _e( 'The snippet title is used to identify the snippet. This will also become the name of the shortcode if you enable that option.', Simple_Snippets::$text_domain ); ?></p>
+<h2><?php _e( 'Title', self::$text_domain ); ?></h2>
+<p><?php _e( 'The snippet title is used to identify the snippet. This will also become the name of the shortcode if you enable that option.', self::$text_domain ); ?></p>
 
-<h2><?php _e( 'Content', Simple_Snippets::$text_domain ); ?></h2>
-<p><?php _e( 'Create HTML content for your snippet just as you would create content for a post or page. You can use shortcodes and even other snippets within your snippet\'s content. To use variables in the content, reference them between curly braces e.g. <code>{variable_name}</code>.', Simple_Snippets::$text_domain ); ?></p>
+<h2><?php _e( 'Content', self::$text_domain ); ?></h2>
+<p><?php _e( 'Create HTML content for your snippet just as you would create content for a post or page. You can use shortcodes and even other snippets within your snippet\'s content. To use variables in the content, reference them between curly braces e.g. <code>{variable_name}</code>.', self::$text_domain ); ?></p>
 
-<h2><?php _e( 'Description', Simple_Snippets::$text_domain ); ?></h2>
-<p><?php _e( 'Include an optional explanation or description of the snippet. If filled out, the description will be displayed in insert snippet window of the post editor.', Simple_Snippets::$text_domain); ?></p>
+<h2><?php _e( 'Description', self::$text_domain ); ?></h2>
+<p><?php _e( 'Include an optional explanation or description of the snippet. If filled out, the description will be displayed in insert snippet window of the post editor.', self::$text_domain); ?></p>
 
-<h2><?php _e( 'Shortcode', Simple_Snippets::$text_domain ); ?></h2>
-<p><?php _e( 'When the shortcode checkbox is checked, the snippet is no longer inserted into a post as HTML, instead it is inserted as a shortcode. The advantage of a shortcode is that you can insert a snippet in many places on the site, and the snippet content will update dynamically whenever the snippet is changed.', Simple_Snippets::$text_domain ); ?></p>
-<p><?php _e( 'The name to use the shortcode is the same as the title of the snippet (with spaces replaced by hypehens). When inserting a snippet as a shortcode, the shortcode tag will be inserted into the post instead of the HTML content i.e. [snippet-name].', Simple_Snippets::$text_domain ); ?></p>
-<p><?php _e( 'If changing a snippet from a shortcode to HTML or vice versa, you will also need to change where the snippet has been inserted.', Simple_Snippets::$text_domain ); ?></p>
+<h2><?php _e( 'Shortcode', self::$text_domain ); ?></h2>
+<p><?php _e( 'When the shortcode checkbox is checked, the snippet is no longer inserted into a post as HTML, instead it is inserted as a shortcode. The advantage of a shortcode is that you can insert a snippet in many places on the site, and the snippet content will update dynamically whenever the snippet is changed.', self::$text_domain ); ?></p>
+<p><?php _e( 'The name to use the shortcode is the same as the title of the snippet (with spaces replaced by hypehens). When inserting a snippet as a shortcode, the shortcode tag will be inserted into the post instead of the HTML content i.e. [snippet-name].', self::$text_domain ); ?></p>
+<p><?php _e( 'If changing a snippet from a shortcode to HTML or vice versa, you will also need to change where the snippet has been inserted.', self::$text_domain ); ?></p>
 
 <?php 
 		return ob_get_clean();
@@ -612,22 +615,22 @@ jQuery(document).ready(function($){
 	 */
 	public static function help_tab_variables() {
 		ob_start(); ?>
-<h2><?php _e( 'Variables', Simple_Snippets::$text_domain ); ?></h2>
-<p><?php _e( 'You can use variables to dynamically change certain values in your snippet. A variable can also be assigned a default value.', Simple_Snippets::$text_domain ); ?></p>
+<h2><?php _e( 'Variables', self::$text_domain ); ?></h2>
+<p><?php _e( 'You can use variables to dynamically change certain values in your snippet. A variable can also be assigned a default value.', self::$text_domain ); ?></p>
 
-<h3><?php _e( 'Variable Names', Simple_Snippets::$text_domain ); ?></h3>
-<p><?php _e( 'Variable names must be unique and should contain only letters (a-z), numbers (0-9) and underscores (_).', Simple_Snippets::$text_domain ); ?></p>
-<p><?php _e( 'If you change the name of a variable, you will also need to change the variable name where you have inserted the snippet (so try not to change the name of a variable).', Simple_Snippets::$text_domain ); ?></p>
+<h3><?php _e( 'Variable Names', self::$text_domain ); ?></h3>
+<p><?php _e( 'Variable names must be unique and should contain only letters (a-z), numbers (0-9) and underscores (_).', self::$text_domain ); ?></p>
+<p><?php _e( 'If you change the name of a variable, you will also need to change the variable name where you have inserted the snippet (so try not to change the name of a variable).', self::$text_domain ); ?></p>
 
-<h3><?php _e( 'Variable Values', Simple_Snippets::$text_domain ); ?></h3>
-<p><?php _e( 'A variable can be assigned a default value which will be used if no other value is provided.', Simple_Snippets::$text_domain ); ?></p>
+<h3><?php _e( 'Variable Values', self::$text_domain ); ?></h3>
+<p><?php _e( 'A variable can be assigned a default value which will be used if no other value is provided.', self::$text_domain ); ?></p>
 
-<h3><?php _e( 'Using a Variable', Simple_Snippets::$text_domain ); ?></h3>
-<p><?php _e( 'To use a variable in a snippet, insert the variable name enclosed in curly braces. For example, to use a variable named <code>var_one</code>, add <code>{var_one}</code> to your snippet.', Simple_Snippets::$text_domain ); ?></p>
+<h3><?php _e( 'Using a Variable', self::$text_domain ); ?></h3>
+<p><?php _e( 'To use a variable in a snippet, insert the variable name enclosed in curly braces. For example, to use a variable named <code>var_one</code>, add <code>{var_one}</code> to your snippet.', self::$text_domain ); ?></p>
 
-<h3><?php _e( 'Variable Select Box', Simple_Snippets::$text_domain ); ?></h3>
-<p><?php _e( 'To constrain the available values for a variable to a specific list of items, insert a comma separated list of values enclosed in curly braces in the <em>Default Value/s</em> field.', Simple_Snippets::$text_domain ); ?></p>
-<p><?php _e( 'For example, entering <code>{ACT,NSW,NT,QLD,SA,TAS,VIC,WA}</code> in the <em>Default Value/s</em> field would display a select box with States and Territories when inserting a snippet.', Simple_Snippets::$text_domain ); ?></p>
+<h3><?php _e( 'Variable Select Box', self::$text_domain ); ?></h3>
+<p><?php _e( 'To constrain the available values for a variable to a specific list of items, insert a comma separated list of values enclosed in curly braces in the <em>Default Value/s</em> field.', self::$text_domain ); ?></p>
+<p><?php _e( 'For example, entering <code>{ACT,NSW,NT,QLD,SA,TAS,VIC,WA}</code> in the <em>Default Value/s</em> field would display a select box with States and Territories when inserting a snippet.', self::$text_domain ); ?></p>
 	<?php 
 		return ob_get_clean();
 	}
