@@ -291,7 +291,7 @@ jQuery(document).ready(function($){
 
 			}
 
-			wp_enqueue_script( 'snippets', self::get_url( '/js/snippets.js' ), array( 'jquery', 'jquery-ui-dialog' ) );
+			wp_enqueue_script( 'snippets', self::get_url( '/js/snippets.js' ), array( 'jquery', 'jquery-ui-dialog', 'jquery-ui-tabs' ) );
 
 			wp_localize_script( 'snippets', 'SnippetData', $snippet_data );
 
