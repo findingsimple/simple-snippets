@@ -14,7 +14,7 @@ nav#snippet-selector {
 	border-bottom: 1px solid #CCC;
 }
 #snippets-dialog #snippet-select {
-	margin: -1.6em 0 0 190px;
+	margin: -1.6em 0 0 1em;
 }
 #snippets-tabs .ui-tabs-panel {
 	display: block;
