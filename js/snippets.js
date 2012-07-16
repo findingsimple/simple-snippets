@@ -42,6 +42,42 @@ jQuery(document).ready(function($){
 		snippets_caller = 'html';
 		jQuery('#snippets-dialog').dialog('open');
 	});
+
+	toggleUseContent();
+
+	$('#_snippet_is_shortcode').bind('load change',function(){
+		toggleUseContent();
+	});
+
+	$('#snippet_variable_adder').click(function(){
+		var elementCount = $('#snippet-variables fieldset').length,
+			oldElementID = elementCount - 1,
+			newFieldset  = $('#snippet-variables fieldset:last').clone();
+
+		// Clear values
+		newFieldset.find('input').val('');
+
+		// Update the attributes
+		$.each(['variable_name','variable_default'],function(index,keyName){
+			newFieldset.find('[name="_snippet_variables['+oldElementID+']['+keyName+']"]').attr({
+				'id': '_snippet_variables['+elementCount+']['+keyName+']',
+				'name': '_snippet_variables['+elementCount+']['+keyName+']'
+			});
+			newFieldset.find('[for="_snippet_variables['+oldElementID+']['+keyName+']"]').attr({
+				'for': '_snippet_variables['+elementCount+']['+keyName+']'
+			});
+		});
+
+		$('#snippet-variables fieldset:last').after(newFieldset);
+
+	});
+
+	function toggleUseContent(){
+		if($('#_snippet_is_shortcode').attr('checked'))
+			$('.use-snippet-content').slideDown();
+		else
+			$('.use-snippet-content').slideUp();
+	}
 });
 
 // Global variables to keep track of the canvas instance and which editor opened the snippet dialog
