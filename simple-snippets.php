@@ -440,7 +440,7 @@ class Simple_Snippets {
 	 *
 	 * @since 1.0
 	 */
-	public static function shortcode_callback( $atts, $content = '', $callback ) {
+	public static function shortcode_callback( $atts, $_content = '', $callback ) {
 
 		$snippets = self::get_snippets();
 
@@ -453,14 +453,18 @@ class Simple_Snippets {
 
 		$attributes = compact( array_keys( $shortcode_symbols ) );
 
-		$snippet = addslashes( wpautop( $snippets[$callback]->post_content ) );
-		$snippet = str_replace( "&", "&amp;", $snippet );
+		$snippet = str_replace( "&", "&amp;", addslashes( wpautop( $snippets[$callback]->post_content ) ) );
 
-		// Add enclosed content if any
-		$attributes['_content'] = $content;
+		// Get the first p tag to make sure it's an opening tag, if it is a closing tag, append an opening tag, works around a bug in wpautop()
+		if ( preg_match( '/<(.*?)p("[^"]*"|\'[^\']*\'|[^\'">])*>/', $_content, $matches ) )
+			if ( strpos( $matches[0], '/' ) == 1 )
+				$_content = '<p>' . $_content;
 
-		foreach ( $attributes as $key => $val )
-			$snippet = str_replace( "{".$key."}", $val, $snippet );
+		// Add enclosed content to variables
+		$attributes['_content'] = $_content;
+
+		foreach ( $attributes as $variable_name => $variable_value )
+			$snippet = str_replace( "{".$variable_name."}", $variable_value, $snippet );
 
 		// Strip escaping and execute nested shortcodes
 		$snippet = do_shortcode( stripslashes( $snippet ) );
@@ -484,12 +488,9 @@ class Simple_Snippets {
 
 				self::$snippets[$snippet->post_name] = $snippet;
 
-				self::$snippets[$snippet->post_name]->variables = get_post_meta( $snippet->ID, '_snippet_variables', true );
-
+				self::$snippets[$snippet->post_name]->variables    = get_post_meta( $snippet->ID, '_snippet_variables', true );
 				self::$snippets[$snippet->post_name]->is_shortcode = get_post_meta( $snippet->ID, '_snippet_is_shortcode', true );
-
-				self::$snippets[$snippet->post_name]->use_content = get_post_meta( $snippet->ID, '_snippet_use_content', true );
-
+				self::$snippets[$snippet->post_name]->use_content  = get_post_meta( $snippet->ID, '_snippet_use_content', true );
 			}
 
 		}
