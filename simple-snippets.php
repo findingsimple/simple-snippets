@@ -69,6 +69,8 @@ class Simple_Snippets {
 
 		add_filter( 'post_row_actions', array( __CLASS__, 'remove_inline_actions' ), 10, 2 );
 
+		add_filter( 'post_updated_messages', array( __CLASS__, 'remove_update_message_actions' ) );
+
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_styles_and_scripts' ) );
 
 		add_action( 'admin_footer', array( __CLASS__, 'snippet_dialog_markup' ) );
@@ -533,6 +535,20 @@ jQuery(document).ready(function($){
 			unset( $actions['inline hide-if-no-js'] );
 
 		return $actions;
+	}
+
+	/**
+	 * When a snippet is published/updated, "View Snippet" is displayed. This function 
+	 * changes that.
+	 *
+	 * @since 1.0
+	 */
+	public static function remove_update_message_actions( $messages ) {
+
+		foreach ( $messages[self::$post_type_name] as $key => $snippet_messages )
+			$messages[self::$post_type_name][$key] = preg_replace( '/ \<a.*\>(View|Preview) ' . ucfirst( self::$post_type_name ) . '\<\/a\>/i', '', $snippet_messages );
+
+		return $messages;
 	}
 
 	/* Help tabs */
