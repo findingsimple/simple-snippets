@@ -67,6 +67,8 @@ class Simple_Snippets {
 
 		add_filter( 'mce_buttons', array( __CLASS__, 'add_remove_tinymce_buttons' ) );
 
+		add_filter( 'post_row_actions', array( __CLASS__, 'remove_inline_actions' ), 10, 2 );
+
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_styles_and_scripts' ) );
 
 		add_action( 'admin_footer', array( __CLASS__, 'snippet_dialog_markup' ) );
@@ -520,6 +522,18 @@ jQuery(document).ready(function($){
 		return content_url( $post_content_path . $file );
 	}
 
+	/**
+	 * Remove "Quick Edit" and irrelevant actions from snippets list table.
+	 *
+	 * @since 1.0
+	 */
+	public static function remove_inline_actions( $actions, $post ) {
+
+		if( $post->post_type == self::$post_type_name )
+			unset( $actions['inline hide-if-no-js'] );
+
+		return $actions;
+	}
 
 	/* Help tabs */
 
