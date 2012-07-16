@@ -440,7 +440,7 @@ class Simple_Snippets {
 	 *
 	 * @since 1.0
 	 */
-	public static function shortcode_callback( $atts, $content = null, $callback ) {
+	public static function shortcode_callback( $atts, $content = '', $callback ) {
 
 		error_log( 'in shortcode_callback $content = ' . print_r( $content, true ) );
 		$snippets = self::get_snippets();
@@ -457,12 +457,11 @@ class Simple_Snippets {
 		$snippet = addslashes( wpautop( $snippets[$callback]->post_content ) );
 		$snippet = str_replace( "&", "&amp;", $snippet );
 
+		// Add enclosed content if any
+		$attributes['_content'] = $content;
+
 		foreach ( $attributes as $key => $val )
 			$snippet = str_replace( "{".$key."}", $val, $snippet );
-
-		// Add enclosed content if any
-		if ( $content != null )
-			$snippet .= $content;
 
 		// Strip escaping and execute nested shortcodes
 		$snippet = do_shortcode( stripslashes( $snippet ) );
