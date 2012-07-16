@@ -30,25 +30,25 @@ nav#snippet-selector {
 	display: inline-block;
 	margin: 4px 0;
 }
-#snippets-dialog input {
+#snippets-dialog .snippet-tab input,
+#snippets-dialog .snippet-tab textarea,
+#snippets-dialog .snippet-tab select {
 	float: right;
-	width: 85%;
+	width: 80%;
 	margin-top: -3px;
 }
 #snippets-dialog .select-wrap {
 	float: left;
 	width:  100%;
 	clear: both;
-	margin-bottom: 5px;
+	margin: 5px 0;
 }
-#snippets-dialog label.select {
+#snippets-dialog .snippet-tab label.select {
 	float: left;
 	width: auto;
 }
-#snippets-dialog select {
-	float: left;
-	width: auto;
-	margin-left: 1em;
+#snippets-dialog label.snippet-content {
+	vertical-align: top;
 }
 
 /* Add Snippet Page */
