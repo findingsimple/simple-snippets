@@ -16,7 +16,7 @@ jQuery(document).ready(function($){
 				},
 				Insert: function() {
 					var snippetName = $('#snippet-select').val().replace('#snippet-tab-',''),
-						snippetToInsert = SnippetData.contentToInsert[snippetName];
+						snippetToInsert = SnippetData.snippetsToInsert[snippetName];
 
 					$(this).dialog("close");
 
