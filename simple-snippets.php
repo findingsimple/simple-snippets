@@ -273,7 +273,10 @@ class Simple_Snippets {
 					$snippet_data['snippetsToInsert'][$snippet->post_name] = '[' . $snippet->post_name . $variable_string . ']';
 
 					if ( $snippet->use_content != 'false' )
-						$snippet_data['snippetsToInsert'][$snippet->post_name] .= '{_content}[/' . $snippet->post_name . ']';
+						$snippet_data['snippetsToInsert'][$snippet->post_name] .= '{_content}';
+
+					// Always close shortcode to future proof against a shortcode being changed to include content (and breaking existing shortcodes without closing tag)
+					$snippet_data['snippetsToInsert'][$snippet->post_name] .= '[/' . $snippet->post_name . ']';
 
 				} else {
 
