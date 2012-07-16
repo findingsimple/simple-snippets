@@ -1,5 +1,9 @@
 jQuery(document).ready(function($){
-	var $tabs = $("#snippets-tabs").tabs();
+	var $snippetTabs = $("#snippets-tabs").tabs();
+
+	$('#snippet-select').bind('change',function(){
+		$snippetTabs.tabs('select',$(this).val());
+	});
 
 	$(function() {
 		$( "#snippets-dialog" ).dialog({
@@ -11,11 +15,10 @@ jQuery(document).ready(function($){
 					$(this).dialog("close");
 				},
 				Insert: function() {
+					var snippetName = $('#snippet-select').val().replace('#snippet-tab-',''),
+						snippetToInsert = SnippetData.contentToInsert[snippetName];
+
 					$(this).dialog("close");
-
-					var snippetName = $("#snippets-tabs li:eq("+$tabs.tabs('option','selected')+") a").attr('href').replace('#snippet-tab-','');
-
-					var snippetToInsert = SnippetData.contentToInsert[snippetName];
 
 					$.each(SnippetData.variables[snippetName],function(name,value){
 						snippetToInsert = snippetToInsert.replace('{'+name+'}', $('#'+snippetName+'_'+name).val());

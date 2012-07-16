@@ -248,9 +248,6 @@ jQuery(document).ready(function($){
 
 		if ( $screen->base == 'post' ) {
 
-			wp_enqueue_script( 'jquery-ui-dialog' );
-			wp_enqueue_script( 'jquery-ui-tabs' );
-
 			wp_enqueue_style( 'wp-jquery-ui-dialog' );
 			wp_enqueue_style( 'snippets', self::get_url( '/css/admin.css' ) );
 
@@ -290,7 +287,7 @@ jQuery(document).ready(function($){
 
 			}
 
-			wp_enqueue_script( 'snippets', self::get_url( '/js/snippets.js' ) );
+			wp_enqueue_script( 'snippets', self::get_url( '/js/snippets.js' ), array( 'jquery', 'jquery-ui-dialog' ) );
 
 			wp_localize_script( 'snippets', 'SnippetData', $snippet_data );
 
@@ -353,12 +350,23 @@ jQuery(document).ready(function($){
 		if ( $screen->base != 'post' )
 			return;
 
+		$snippets = self::get_snippets();
 ?>
 <div class="hidden">
 	<div id="snippets-dialog" title="Insert Snippet">
 		<div id="snippets-tabs">
+			<nav id="snippet-selector">
+				<label for="snippet-select">
+					<?php _e( 'Please select a snippet to insert:', Simple_Snippets::$text_domain ); ?>
+					<select id="snippet-select" name="snippet-select">
+						<?php foreach ( $snippets as $key => $snippet ) : ?>
+							<?php if ( $screen->id == self::$admin_screen_id && $post_id == $snippet->ID ) continue; // don't add the snippet to itself ?>
+							<option value="#snippet-tab-<?php echo $snippet->post_name; ?>"><?php echo $snippet->post_title; ?></option>
+						<?php endforeach; ?>
+					</select>
+				</label>
+			</nav>
 			<ul>
-			<?php $snippets = self::get_snippets(); ?>
 			<?php foreach ( $snippets as $key => $snippet ) : ?>
 				<?php if ( $screen->id == self::$admin_screen_id && $post_id == $snippet->ID ) continue; // don't add the snippet to itself ?>
 				<li><a href="#snippet-tab-<?php echo $snippet->post_name; ?>"><?php echo $snippet->post_title; ?></a></li>
