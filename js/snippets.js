@@ -21,7 +21,7 @@ jQuery(document).ready(function($){
 					$(this).dialog("close");
 
 					$.each(SnippetData.variables[snippetName],function(name,value){
-						snippetToInsert = snippetToInsert.replace('{'+name+'}', $('#'+snippetName+'_'+name).val());
+						snippetToInsert = snippetToInsert.replace('{'+name+'}',escapeToJSON($('#'+snippetName+'_'+name).val()));
 					});
 
 					snippetToInsert = $.parseJSON(snippetToInsert);
@@ -29,7 +29,8 @@ jQuery(document).ready(function($){
 					// HTML editor
 					if (snippets_caller == 'html') {
 						QTags.insertContent(snippetToInsert);
-					} else { // Visual Editor
+					} else {
+						// Visual Editor
 						snippets_canvas.execCommand('mceInsertContent', false, snippetToInsert);
 					}
 				}
@@ -78,6 +79,19 @@ jQuery(document).ready(function($){
 		else
 			$('.use-snippet-content').slideUp();
 	}
+
+	function escapeToJSON(string) {
+
+	    if (string != null && string != "") {
+			string = string.replace(/\\/g,'\\\\');
+			string = string.replace(/\"/g,'\\"');
+			string = string.replace(/\0/g,'\\0');
+			string = string.replace(/\n/g, "\\n");
+	    }
+
+		return string;
+	}
+
 });
 
 // Global variables to keep track of the canvas instance and which editor opened the snippet dialog
