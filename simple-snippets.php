@@ -455,14 +455,16 @@ class Simple_Snippets {
 
 		$snippet = str_replace( "&", "&amp;", addslashes( $snippets[$callback]->post_content ) );
 
+		$_content = remove_wpautop( $_content );
+
 		// Get the first <p> tag to make sure it's an opening tag, if it is a closing tag, prepend an opening tag, works around a bug in wpautop()
-		if ( preg_match( '/<(.*?)p("[^"]*"|\'[^\']*\'|[^\'">])*>/', $_content, $matches ) )
+		if ( preg_match( '/<(\/?)p("[^"]*"|\'[^\']*\'|[^\'">r])*>/', $_content, $matches ) )
 			if ( strpos( $matches[0], '/' ) == 1 )
 				$_content = '<p>' . $_content;
 
-		// Get the last <p> tag to make sure it's closing tag, if it is an opening tag, append a closing tag, works around a bug in wpautop()
-		if ( preg_match( '/<(.*?)p("[^"]*"|\'[^\']*\'|[^\'">])*>.*?$/', $_content, $matches ) )
-			if ( strpos( $matches[0], '/' ) != 1 )
+		// Get all the <p> tags and make sure the last tag is a closing tag, if it is an opening tag, append a closing tag, works around a bug in wpautop()
+		if ( preg_match_all( '/<(\/?)p("[^"]*"|\'[^\']*\'|[^\'">r])*?>/', $_content, $matches ) )
+			if ( end( $matches[1] ) != '/' ) // We didn't have a closing /, so we have an opening <p> tag
 				$_content = $_content . '</p>';
 
 		// Add enclosed content to variables
