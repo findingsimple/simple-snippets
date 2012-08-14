@@ -349,7 +349,7 @@ class Simple_Snippets {
 					<input type="text" name="_snippet_variables[<?php echo $index; ?>][variable_name]" id="_snippet_variables[<?php echo $index; ?>][variable_name]" value="<?php echo $snippet_variable['variable_name']; ?>" />
 				</label>
 				<label for="_snippet_variables[<?php echo $index; ?>][variable_default]"><?php _e( 'Default Value/s:', self::$text_domain ) ?>
-					<input type="text" name="_snippet_variables[<?php echo $index; ?>][variable_default]" id="_snippet_variables[<?php echo $index; ?>][variable_default]" value="<?php echo $snippet_variable['variable_default']; ?>" />
+					<input type="text" name="_snippet_variables[<?php echo $index; ?>][variable_default]" id="_snippet_variables[<?php echo $index; ?>][variable_default]" value="<?php esc_attr_e( $snippet_variable['variable_default'] ); ?>" />
 				</label>
 			</fieldset>
 			<?php endforeach; ?>
@@ -571,7 +571,7 @@ class Simple_Snippets {
 				</div>
 				<?php else : ?>
 				<label for="<?php echo $variable_id; ?>"><?php echo $variable_label; ?>:
-					<input type="text" id="<?php echo $variable_id; ?>" name="<?php echo $variable_id; ?>" value="<?php echo $variable['variable_default'] ?>" />
+					<input type="text" id="<?php echo $variable_id; ?>" name="<?php echo $variable_id; ?>" value="<?php esc_attr_e( $variable['variable_default'] ); ?>" />
 				</label>
 				<?php endif; ?>
 				<?php endforeach; ?>

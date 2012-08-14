@@ -21,7 +21,7 @@ jQuery(document).ready(function($){
 					$(this).dialog("close");
 
 					$.each(SnippetData.variables[snippetName],function(name,value){
-						snippetToInsert = snippetToInsert.replace('{'+name+'}',escapeToJSON($('#'+snippetName+'_'+name).val()));
+						snippetToInsert = snippetToInsert.replace('{'+name+'}',escapeToJSON(escapeToJSON($('#'+snippetName+'_'+name).val())));
 					});
 
 					snippetToInsert = $.parseJSON(snippetToInsert);
