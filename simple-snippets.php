@@ -83,7 +83,7 @@ class Simple_Snippets {
 
 		add_action( 'admin_menu', array( __CLASS__, 'add_settings_page' ) );
 
-		add_action( 'admin_init', array( __CLASS__, 'save_settings' ) );
+		add_action( 'admin_init', array( __CLASS__, 'set_and_save_settings' ) );
 
 		// In context help 
 		add_action( 'load-post.php', array( __CLASS__, 'add_help_tabs' ) );
@@ -169,10 +169,24 @@ class Simple_Snippets {
 	 *
 	 * @since 1.0
 	 **/
-	function save_settings() {
+	function set_and_save_settings() {
 		global $wp_roles;
 
-	    if ( ! isset( $_POST['snippet_settings_nonce'] ) || ! check_admin_referer( __FILE__, 'snippet_settings_nonce' ) || ! current_user_can( 'manage_options' ) )
+		// Bit of a hack to set defaults
+		if ( get_option( 'fs_capabilities_set_for_' . self::$post_type_name, false ) === false ) {
+
+			$_POST['snippet_settings_nonce']       = wp_create_nonce( __FILE__ );
+			$_POST['manage-snippet-administrator'] = 'on';
+			$_POST['manage-snippet-editor']        = 'on';
+			$_POST['create-snippet-administrator'] = 'on';
+			$_POST['create-snippet-editor']        = 'on';
+			$_POST['create-snippet-author']        = 'on';
+			$_POST['create-snippet-contributor']   = 'on';
+
+			add_option( 'fs_capabilities_set_for_' . self::$post_type_name, 'true' );
+		}
+
+	    if ( ! isset( $_POST['snippet_settings_nonce'] ) || ! wp_verify_nonce( $_POST['snippet_settings_nonce'], __FILE__ ) || ! current_user_can( 'manage_options' ) )
 			return;
 
 		$role_names = $wp_roles->get_names();
