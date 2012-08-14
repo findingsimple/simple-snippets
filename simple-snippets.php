@@ -123,17 +123,17 @@ class Simple_Snippets {
 		$snippet_capabilities = $snippet_post_type->cap;
 
 ?>
-<div class="wrap map-cap-settings">
+<div class="wrap snippet-settings">
 	<?php screen_icon(); ?>
 	<h2><?php _e( 'Snippet Settings', self::$text_domain ) ?></h2>
-	<form id="map-cap-form" method="post" action="">
+	<form id="snippet-setting-form" method="post" action="">
 		<?php wp_nonce_field( __FILE__, 'snippet_settings_nonce' ); ?>
 
 		<h3><?php printf( __( '%s Capabilities', self::$text_domain ), $snippet_post_type->labels->name ); ?></h3>
 		<p><?php _e( 'Control who create, edit and manage snippets.', self::$text_domain ); ?></p>
 
 		<?php // Allow editing own posts ?>
-		<div class="map-cap">
+		<div class="snippet-settings">
 			<h4><?php printf( __( "Create %s", self::$text_domain ), $snippet_post_type->labels->name  ); ?></h4>
 			<p><?php _e( 'Permit roles to create, edit and delete their own snippets.', self::$text_domain ); ?></p>
 			<?php foreach ( $roles as $role ): ?>
@@ -145,7 +145,7 @@ class Simple_Snippets {
 		</div>
 
 		<?php // Allow editing others posts ?>
-		<div class="map-cap">
+		<div class="snippet-settings">
 			<h4><?php printf( __( "Manage %s", self::$text_domain ), $snippet_post_type->labels->name  ); ?></h4>
 			<p><?php _e( 'Permit role to create, edit and delete their own snippets as well as edit the snippets created by others. Allowing a role to manage snippets will also allow them to create snippets.', self::$text_domain ); ?></p>
 			<?php foreach ( $roles as $role ): ?>
