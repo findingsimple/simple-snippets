@@ -409,11 +409,13 @@ class Simple_Snippets {
 	public static function enqueue_styles_and_scripts() {
 
 		$screen = get_current_screen();
+		
+		if ( is_admin() )
+			wp_enqueue_style( 'snippets', self::get_url( '/css/admin.css' ) );
 
 		if ( $screen->base == 'post' ) {
 
 			wp_enqueue_style( 'wp-jquery-ui-dialog' );
-			wp_enqueue_style( 'snippets', self::get_url( '/css/admin.css' ) );
 
 			/* Prepare the snippets and shortcodes into javascript variables so they can be inserted into the editor and get the variables replaced with user defined strings. */
 			$snippets = self::get_snippets();

@@ -62,3 +62,43 @@ nav#snippet-selector {
 	margin-top: -2px;
 	float: right;
 }
+
+/**
+ * Styling for snippets icons 
+ *
+ * @version 2.0
+ * @since 2.0
+ */
+/* Admin Menu - 16px */
+ #menu-posts-snippet .wp-menu-image {
+     background: url('../img/icon-adminmenu16-sprite.png') no-repeat 6px 6px !important;
+ }
+ #menu-posts-snippet:hover .wp-menu-image, #menu-posts-snippet.wp-has-current-submenu .wp-menu-image {
+     background-position: 6px -26px !important;
+ }
+ /* Post Screen - 32px */
+ .icon32-posts-snippet {
+     background: url('../img/icon-adminpage32.png') no-repeat left top !important;
+ }
+ @media
+ only screen and (-webkit-min-device-pixel-ratio: 1.5),
+ only screen and (   min--moz-device-pixel-ratio: 1.5),
+ only screen and (     -o-min-device-pixel-ratio: 3/2),
+ only screen and (        min-device-pixel-ratio: 1.5),
+ only screen and (                min-resolution: 1.5dppx) {
+      
+     /* Admin Menu - 16px @2x */
+     #menu-posts-snippet .wp-menu-image {
+         background-image: url('../img/icon-adminmenu16-sprite_2x.png') !important;
+         -webkit-background-size: 16px 48px;
+         -moz-background-size: 16px 48px;
+         background-size: 16px 48px;
+     }
+     /* Post Screen - 32px @2x */
+     .icon32-posts-snippet {
+         background-image: url('../img/images/icon-adminpage32_2x.png') !important;
+         -webkit-background-size: 32px 32px;
+         -moz-background-size: 32px 32px;
+         background-size: 32px 32px;
+     }        
+ }
