@@ -319,8 +319,8 @@ class Simple_Snippets {
 		if ( empty( $snippet_variables ) )
 			$snippet_variables = array( array( 'variable_name' => '', 'variable_default' => '' ) );
 
-		?>
-		<p><?php _e( 'An optional description for display when inserting the snippet.', self::$text_domain ); ?></p>
+?>
+		<p><?php _e( 'An optional description to display when inserting this snippet.', self::$text_domain ); ?></p>
 		<label class="screen-reader-text" for="excerpt"><?php _e( 'Description', self::$text_domain ) ?></label>
 		<textarea rows="1" cols="40" name="excerpt" tabindex="6" id="excerpt"><?php echo esc_attr( $post->post_excerpt ); ?></textarea>
 
