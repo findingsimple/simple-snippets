@@ -97,7 +97,7 @@ class Simple_Snippets {
 	 */
 	function add_settings_page() {
 		if ( function_exists( 'add_options_page' ) )
-			$page = add_options_page( 'Snippet Settings', 'Snippets', 'manage_options', 'snippets', array( __CLASS__, 'settings_page'  ) );
+			$page = add_options_page( 'Snippet Settings', 'Snippets', 'manage_options', 'snippet_settings', array( __CLASS__, 'settings_page'  ) );
 
 	}
 
@@ -250,7 +250,7 @@ class Simple_Snippets {
 		}
 
 		// Redirect so that new capabilities are applied correctly
-		$location = admin_url( 'options-general.php?page=snippets&updated=1' );
+		$location = admin_url( 'options-general.php?page=snippet_settings&updated=1' );
 		wp_safe_redirect( $location );
 		exit;
 	}
