@@ -48,6 +48,8 @@ class Simple_Snippets {
 
 	static $admin_screen_id;
 
+	static $capability_type = 'snippet';
+
 	static $snippets = array();
 
 	public static function init() {
@@ -79,9 +81,164 @@ class Simple_Snippets {
 
 		add_action( 'save_post', array( __CLASS__, 'save_snippet_meta' ) );
 
+		add_action( 'admin_menu', array( __CLASS__, 'add_settings_page' ) );
+
+		add_action( 'admin_init', array( __CLASS__, 'save_settings' ) );
+
 		// In context help 
 		add_action( 'load-post.php', array( __CLASS__, 'add_help_tabs' ) );
 		add_action( 'load-post-new.php', array( __CLASS__, 'add_help_tabs' ) );
+	}
+
+	/**
+	 * Adds a settings page for administrators under the default WordPress Settings menu.
+	 * 
+	 * @since 1.0
+	 */
+	function add_settings_page() {
+		if ( function_exists( 'add_options_page' ) )
+			$page = add_options_page( 'Snippet Settings', 'Snippets', 'manage_options', 'snippets', array( __CLASS__, 'settings_page'  ) );
+
+	}
+
+	/**
+	 * Site admins may want to allow or disallow users to create, edit and delete snippets.
+	 *
+	 * This function provides an admin menu for selecting which roles can do what with snippets.
+	 *
+	 * @since 1.0
+	 */
+	function settings_page() { 
+		global $wp_roles;
+
+		$role_names = $wp_roles->get_names();
+		$roles = array();
+
+		foreach ( $role_names as $role_name => $display_name ) {
+			$roles[$role_name] = get_role( $role_name );
+			$roles[$role_name]->display_name = $display_name;
+		}
+
+		$snippet_post_type    = get_post_type_object( self::$post_type_name );
+		$snippet_capabilities = $snippet_post_type->cap;
+
+?>
+<div class="wrap map-cap-settings">
+	<?php screen_icon(); ?>
+	<h2><?php _e( 'Snippet Settings', self::$text_domain ) ?></h2>
+	<form id="map-cap-form" method="post" action="">
+		<?php wp_nonce_field( __FILE__, 'snippet_settings_nonce' ); ?>
+
+		<h3><?php printf( __( '%s Capabilities', self::$text_domain ), $snippet_post_type->labels->name ); ?></h3>
+		<p><?php _e( 'Control who create, edit and manage snippets.', self::$text_domain ); ?></p>
+
+		<?php // Allow editing own posts ?>
+		<div class="map-cap">
+			<h4><?php printf( __( "Create %s", self::$text_domain ), $snippet_post_type->labels->name  ); ?></h4>
+			<p><?php _e( 'Permit roles to create, edit and delete their own snippets.', self::$text_domain ); ?></p>
+			<?php foreach ( $roles as $role ): ?>
+			<label for="create-<?php echo self::$post_type_name . '-' . $role->name; ?>">
+				<input type="checkbox" id="create-<?php echo self::$post_type_name . '-' . $role->name; ?>" name="create-<?php echo self::$post_type_name . '-' . $role->name; ?>"<?php checked( isset( $role->capabilities[$snippet_capabilities->edit_published_posts] ), 1 ); ?> />
+				<?php echo $role->display_name; ?>
+			</label>
+			<?php endforeach; ?>
+		</div>
+
+		<?php // Allow editing others posts ?>
+		<div class="map-cap">
+			<h4><?php printf( __( "Manage %s", self::$text_domain ), $snippet_post_type->labels->name  ); ?></h4>
+			<p><?php _e( 'Permit role to create, edit and delete their own snippets as well as edit the snippets created by others. Allowing a role to manage snippets will also allow them to create snippets.', self::$text_domain ); ?></p>
+			<?php foreach ( $roles as $role ): ?>
+			<label for="manage-<?php echo self::$post_type_name . '-' . $role->name; ?>">
+				<input type="checkbox" id="manage-<?php echo self::$post_type_name . '-' . $role->name; ?>" name="manage-<?php echo self::$post_type_name . '-' . $role->name; ?>"<?php checked( isset( $role->capabilities[$snippet_capabilities->edit_others_posts] ), 1 ); ?> />
+				<?php echo $role->display_name; ?>
+			</label>
+			<?php endforeach; ?>
+		</div>
+
+		<p class="submit">
+			<input type="submit" name="submit" class="button button-primary" value="<?php _e( 'Save', self::$text_domain ); ?>" />
+		</p>
+	</form>
+</div>
+<?php
+	}
+
+	/**
+	 * Save snippet settings when the admin page is submitted page by adding the capability to the appropriate roles.
+	 *
+	 * @since 1.0
+	 **/
+	function save_settings() {
+		global $wp_roles;
+
+	    if ( ! isset( $_POST['snippet_settings_nonce'] ) || ! check_admin_referer( __FILE__, 'snippet_settings_nonce' ) || ! current_user_can( 'manage_options' ) )
+			return;
+
+		$role_names = $wp_roles->get_names();
+		$roles = array();
+
+		foreach ( $role_names as $role_name => $display_name ) {
+			$roles[$role_name] = get_role( $role_name );
+			$roles[$role_name]->display_name = $display_name;
+		}
+
+		$snippet_post_type    = get_post_type_object( self::$post_type_name );
+		$snippet_capabilities = $snippet_post_type->cap;
+
+		foreach ( $roles as $role_name => $role ) {
+
+			$snippet_role_tag = self::$post_type_name . '-' . $role_name;
+
+			if ( ( isset( $_POST['create-'.$snippet_role_tag] ) && $_POST['create-'.$snippet_role_tag] == 'on' ) || ( isset( $_POST['manage-'.$snippet_role_tag] ) && $_POST['manage-'.$snippet_role_tag] == 'on' ) ) {
+
+				// Shared capability required to see post's menu & publish posts
+				$role->add_cap( $snippet_capabilities->edit_posts );
+
+				// Shared capability required to delete posts
+				$role->add_cap( $snippet_capabilities->delete_posts );
+
+				// Allow publish
+				$role->add_cap( $snippet_capabilities->publish_posts );
+
+				// Allow editing own posts
+				$role->add_cap( $snippet_capabilities->edit_published_posts );
+				$role->add_cap( $snippet_capabilities->edit_private_posts );
+				$role->add_cap( $snippet_capabilities->delete_published_posts );
+				$role->add_cap( $snippet_capabilities->delete_private_posts );
+			} else {
+
+				// Shared capability required to see post's menu & publish posts
+				$role->remove_cap( $snippet_capabilities->edit_posts );
+
+				// Shared capability required to delete posts
+				$role->remove_cap( $snippet_capabilities->delete_posts );
+
+				// Allow publish
+				$role->remove_cap( $snippet_capabilities->publish_posts );
+
+				// Allow editing own posts
+				$role->remove_cap( $snippet_capabilities->edit_published_posts );
+				$role->remove_cap( $snippet_capabilities->edit_private_posts );
+				$role->remove_cap( $snippet_capabilities->delete_published_posts );
+				$role->remove_cap( $snippet_capabilities->delete_private_posts );
+			}
+
+			// Allow editing other's posts
+			if ( isset( $_POST['manage-'.$snippet_role_tag] ) && $_POST['manage-'.$snippet_role_tag] == 'on' ) {
+				$role->add_cap( $snippet_capabilities->edit_others_posts );
+				$role->add_cap( $snippet_capabilities->delete_others_posts );
+			} else {
+				$role->remove_cap( $snippet_capabilities->edit_others_posts );
+				$role->remove_cap( $snippet_capabilities->delete_others_posts );
+			}
+
+		}
+
+		// Redirect so that new capabilities are applied correctly
+		$location = admin_url( 'options-general.php?page=snippets&updated=1' );
+		wp_safe_redirect( $location );
+		exit;
 	}
 
 	/**
@@ -222,6 +379,8 @@ class Simple_Snippets {
 			'has_archive'        => true, 
 			'hierarchical'       => false,
 			'menu_position'      => null,
+			'capability_type'    => self::$capability_type,
+			'map_meta_cap'       => true,
 			'supports'           => array( 'title', 'editor', 'author', 'excerpt', 'revisions' )
 		); 
 
@@ -645,6 +804,8 @@ class Simple_Snippets {
 	<?php 
 		return ob_get_clean();
 	}
+
+
 }
 
 Simple_Snippets::init();
