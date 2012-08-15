@@ -71,7 +71,7 @@ class Simple_Snippets {
 
 		add_filter( 'post_row_actions', array( __CLASS__, 'remove_inline_actions' ), 10, 2 );
 
-		add_filter( 'post_updated_messages', array( __CLASS__, 'remove_update_message_actions' ) );
+		add_filter( 'post_updated_messages', array( __CLASS__, 'set_correct_snippet_messages' ), 11 );
 
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_styles_and_scripts' ) );
 
@@ -420,6 +420,8 @@ class Simple_Snippets {
 			/* Prepare the snippets and shortcodes into javascript variables so they can be inserted into the editor and get the variables replaced with user defined strings. */
 			$snippets = self::get_snippets();
 
+			$snippet_data = array();
+
 			foreach ( $snippets as $key => $snippet ) {
 
 				$variable_string = '';
@@ -727,15 +729,29 @@ class Simple_Snippets {
 	}
 
 	/**
-	 * When a snippet is published/updated, "View Snippet" is displayed. This function 
-	 * changes that.
+	 * Customise the messsages for all custom post types in a WordPress install.
 	 *
+	 * @author Brent Shepherd <brent@findingsimple.com>
 	 * @since 1.0
 	 */
-	public static function remove_update_message_actions( $messages ) {
+	function set_correct_snippet_messages( $messages ) {
+		global $post, $post_ID;
 
-		foreach ( $messages[self::$post_type_name] as $key => $snippet_messages )
-			$messages[self::$post_type_name][$key] = preg_replace( '/ \<a.*\>(View|Preview) ' . ucfirst( self::$post_type_name ) . '\<\/a\>/i', '', $snippet_messages );
+		$snippet_object = get_post_type_object( self::$post_type_name );
+
+		$messages[self::$post_type_name] = array(
+			0  => '', // Unused. Messages start at index 1.
+			1  => sprintf( __( '%s updated.' ), $snippet_object->labels->singular_name ),
+			2  => __( 'Custom field updated.' ),
+			3  => __( 'Custom field deleted.' ),
+			4  => sprintf( __( '%s updated.' ), $snippet_object->labels->singular_name ),
+			5  => isset( $_GET['revision'] ) ? sprintf( __( '%s restored to revision from %s' ), $snippet_object->labels->singular_name, wp_post_revision_title( (int) $_GET['revision'], false ) ) : false,
+			6  => sprintf( __( '%s published.' ), $snippet_object->labels->singular_name ),
+			7  => sprintf( __( '%s saved.' ), $snippet_object->labels->singular_name ),
+			8  => sprintf( __( '%s submitted.' ), $snippet_object->labels->singular_name ),
+			9  => sprintf( __( '%s scheduled for: <strong>%s</strong>.' ), $snippet_object->labels->singular_name, date_i18n( __( 'M j, Y @ G:i' ), strtotime( $post->post_date ) ) ),
+			10 => sprintf( __( '%s draft updated.' ), $snippet_object->labels->singular_name ),
+		);
 
 		return $messages;
 	}
