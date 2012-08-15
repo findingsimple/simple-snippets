@@ -803,14 +803,14 @@ class Simple_Snippets {
 <p><?php _e( 'The snippet title is used to identify the snippet. This will also become the name of the shortcode if you enable that option.', self::$text_domain ); ?></p>
 
 <h2><?php _e( 'Content', self::$text_domain ); ?></h2>
-<p><?php _e( 'Create HTML content for your snippet just as you would create content for a post or page. You can use shortcodes and even other snippets within your snippet\'s content. To use variables in the content, reference them between curly braces e.g. <code>{variable_name}</code>.', self::$text_domain ); ?></p>
+<p><?php _e( 'Create HTML content for your snippet just as you would create content for a post or page. You can use shortcodes and even other snippets within your snippet\'s content. To use variables in the content, reference the variable between curly braces e.g. <code>{variable_1}</code>.', self::$text_domain ); ?></p>
 
 <h2><?php _e( 'Description', self::$text_domain ); ?></h2>
 <p><?php _e( 'Include an optional explanation or description of the snippet. If filled out, the description will be displayed in insert snippet window of the post editor.', self::$text_domain); ?></p>
 
 <h2><?php _e( 'Shortcode', self::$text_domain ); ?></h2>
 <p><?php _e( 'When the shortcode checkbox is checked, the snippet is no longer inserted into a post as HTML, instead it is inserted as a shortcode. The advantage of a shortcode is that you can insert a snippet in many places on the site, and the snippet content will update dynamically whenever the snippet is changed.', self::$text_domain ); ?></p>
-<p><?php _e( 'The name to use the shortcode is the same as the title of the snippet (with spaces replaced by hypehens). When inserting a snippet as a shortcode, the shortcode tag will be inserted into the post instead of the HTML content i.e. [snippet-name].', self::$text_domain ); ?></p>
+<p><?php _e( 'The tag used for inserting the shortcode is derived from the snippet\'s ID. When inserting a snippet as a shortcode, the shortcode tag will be inserted into the post instead of the HTML content i.e. [snippet-123].', self::$text_domain ); ?></p>
 <p><?php _e( 'If changing a snippet from a shortcode to HTML or vice versa, you will also need to change where the snippet has been inserted.', self::$text_domain ); ?></p>
 
 <?php 
@@ -828,19 +828,22 @@ class Simple_Snippets {
 <h2><?php _e( 'Variables', self::$text_domain ); ?></h2>
 <p><?php _e( 'You can use variables to dynamically change certain values in your snippet. A variable can also be assigned a default value.', self::$text_domain ); ?></p>
 
-<h3><?php _e( 'Variable Names', self::$text_domain ); ?></h3>
-<p><?php _e( 'Variable names must be unique and should contain only letters (a-z), numbers (0-9) and underscores (_).', self::$text_domain ); ?></p>
-<p><?php _e( 'If you change the name of a variable, you will also need to change the variable name where you have inserted the snippet (so try not to change the name of a variable).', self::$text_domain ); ?></p>
+<h3><?php _e( 'Variable Description', self::$text_domain ); ?></h3>
+<p><?php _e( 'The variable description helps people using a snippet to understand what a variable refers to. It is displayed alongside the variable on the <em>Insert Snippet</em> dialogue and if the variable is a shortcode, within the shortcode attributes.', self::$text_domain ); ?></p>
 
-<h3><?php _e( 'Variable Values', self::$text_domain ); ?></h3>
-<p><?php _e( 'A variable can be assigned a default value which will be used if no other value is provided.', self::$text_domain ); ?></p>
+<h3><?php _e( 'Default Value', self::$text_domain ); ?></h3>
+<p><?php _e( 'A variable can be assigned a value which will be used if no other value is provided for the variable when the snippet is inserted.', self::$text_domain ); ?></p>
 
 <h3><?php _e( 'Using a Variable', self::$text_domain ); ?></h3>
-<p><?php _e( 'To use a variable in a snippet, insert the variable name enclosed in curly braces. For example, to use a variable named <code>var_one</code>, add <code>{var_one}</code> to your snippet.', self::$text_domain ); ?></p>
+<p><?php _e( 'To add a variable to a snippet\'s content, insert the variable ID enclosed in curly braces. For example, to use variable with ID of 1, add <code>{variable_1}</code> to your snippet\'s content.', self::$text_domain ); ?></p>
+<p><?php _e( 'For your convenience, the text you need to insert into the snippet is displayed above each variable in the <em>Snippet Details</em> metabox.', self::$text_domain ); ?></p>
 
 <h3><?php _e( 'Variable Select Box', self::$text_domain ); ?></h3>
-<p><?php _e( 'To constrain the available values for a variable to a specific list of items, insert a comma separated list of values enclosed in curly braces in the <em>Default Value/s</em> field.', self::$text_domain ); ?></p>
-<p><?php _e( 'For example, entering <code>{ACT,NSW,NT,QLD,SA,TAS,VIC,WA}</code> in the <em>Default Value/s</em> field would display a select box with States and Territories when inserting a snippet.', self::$text_domain ); ?></p>
+<p><?php _e( 'To constrain the available values for a variable to a specific list of items, insert a comma separated list of values enclosed in curly braces in the <em>Default Value</em> field.', self::$text_domain ); ?></p>
+<p><?php _e( 'For example, entering <code>{ACT,NSW,NT,QLD,SA,TAS,VIC,WA}</code> in the <em>Default Value</em> field would display a select box with States and Territories when inserting a snippet.', self::$text_domain ); ?></p>
+
+<h3><?php _e( 'Adding Variables to Snippets Already in Use', self::$text_domain ); ?></h3>
+<p><?php _e( 'If you have previously inserted a snippet as a shortcode or HTML, and then add a new variable to the snippet, you will need to manually add the new variable to existing instances of the snippet.', self::$text_domain ); ?></p>
 	<?php 
 		return ob_get_clean();
 	}
