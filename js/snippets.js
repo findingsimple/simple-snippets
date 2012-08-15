@@ -51,25 +51,42 @@ jQuery(document).ready(function($){
 	});
 
 	$('#snippet_variable_adder').click(function(){
-		var elementCount = $('#snippet-variables fieldset').length,
-			oldElementID = elementCount - 1,
-			newFieldset  = $('#snippet-variables fieldset:last').clone();
+		var lastVarIndex = parseInt($('#snippet_variable_last_index').val()),
+			nextVarIndex = lastVarIndex + 1,
+			newFieldset  = $('#snippet-variables fieldset:last').clone(),
+			lastHeaderText = $('#snippet-variables fieldset:last h5 code').text(),
+			lastIndexRegex = new RegExp(lastVarIndex,'g');
 
 		// Clear values
 		newFieldset.find('input').val('');
 
+		// Update the title
+		newFieldset.find('h5 code').text(lastHeaderText.replace(lastIndexRegex,nextVarIndex));
+
 		// Update the attributes
 		$.each(['variable_name','variable_default'],function(index,keyName){
-			newFieldset.find('[name="_snippet_variables['+oldElementID+']['+keyName+']"]').attr({
-				'id': '_snippet_variables['+elementCount+']['+keyName+']',
-				'name': '_snippet_variables['+elementCount+']['+keyName+']'
+			newFieldset.find('[name="_snippet_variables['+lastVarIndex+']['+keyName+']"]').attr({
+				'id': '_snippet_variables['+nextVarIndex+']['+keyName+']',
+				'name': '_snippet_variables['+nextVarIndex+']['+keyName+']'
 			});
-			newFieldset.find('[for="_snippet_variables['+oldElementID+']['+keyName+']"]').attr({
-				'for': '_snippet_variables['+elementCount+']['+keyName+']'
+			newFieldset.find('[for="_snippet_variables['+lastVarIndex+']['+keyName+']"]').attr({
+				'for': '_snippet_variables['+nextVarIndex+']['+keyName+']'
 			});
 		});
 
-		$('#snippet-variables fieldset:last').after(newFieldset);
+		newFieldset.insertAfter($('#snippet-variables fieldset:last')).hide().slideDown('fast');
+
+		$('#snippet_variable_last_index').val(nextVarIndex);
+	});
+
+	$('#snippet-variables .remove-button').live('click',function(){
+		var variableFieldset = $(this).parents('fieldset.snippet-variable');
+
+		// Hide the variable
+		variableFieldset.slideUp('fast');
+
+		// Clear values
+		variableFieldset.find('input').val('');
 
 	});
 

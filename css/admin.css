@@ -53,14 +53,71 @@ nav#snippet-selector {
 
 /* Add Snippet Page */
 
+#snippet-variables .snippet-variable {
+	display: block;
+	border: 1px #efefef solid;
+	-webkit-border-radius: 3px;
+	   -moz-border-radius: 3px;
+			border-radius: 3px;
+	padding: 0.5em;
+	margin-bottom: 1.6em;
+}
+
+#snippet-variables h5 {
+	margin: 0 0 -1em;
+}
+
+/* Based on https://github.com/alanhogan/CSS-Only-Lightbox-Close-Button */
+#snippet-variables .remove-button {
+	display: block;
+	position: relative;
+	top: -3.3em;
+	left: 98%;
+	height: 0;
+	width: 15px;
+	padding: 15px 0 0 0;
+	overflow: hidden;
+	background: #6f0909 none;
+	border: 2px solid #efefef;
+	-webkit-border-radius: 20px;
+	   -moz-border-radius: 20px;
+			border-radius: 20px;
+	-webkit-box-shadow: 0 0 2px rgba(0, 0, 0, 0.6);
+	   -moz-box-shadow: 0 0 2px rgba(0, 0, 0, 0.6);
+		-ms-box-shadow: 0 0 2px rgba(0, 0, 0, 0.6);
+			box-shadow: 0 0 2px rgba(0, 0, 0, 0.6);
+	color: #ffffff;
+	cursor: pointer;
+	-moz-user-select: none;
+	-webkit-user-select: none;
+	user-select: none;
+}
+#snippet-variables .remove-button:before {
+	content: "\D7";
+	display: block;
+	text-align: center;
+	width: 15px;
+	position: absolute;
+	top: -2px;
+	left: 0;
+	font-size: 15px;
+	line-height: 15px;
+	font-family: "Helvetica Neue", Consolas, Verdana, Tahoma, Calibri, Helvetica, sans-serif;
+}
+
 #snippet-variables label {
 	display: inline-block;
 	margin-bottom: 6px;
 }
+
 #snippet-variables input {
-	width: 62%;
+	width: 58%;
 	margin-top: -2px;
 	float: right;
+}
+
+#snippet_variable_adder {
+	
 }
 
 /**
