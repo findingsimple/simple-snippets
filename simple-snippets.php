@@ -256,41 +256,6 @@ class Simple_Snippets {
 	}
 
 	/**
-	 * When a snippet post type is saved, also save the meta associated with the snippet, like the variables 
-	 * and whether the snippet should be used as a shortcode or HTML.
-	 * 
-	 * @param $post_id int The ID of the snippet post the variables should be saved for.
-	 * @since 1.0
-	 */
-	public static function save_snippet_meta( $post_id ) {
-
-		if ( ! current_user_can( 'edit_post', $post_id ) && ! current_user_can( 'edit_page', $post_id ) )
-			return $post_id;
-
-		/* Meta not submitted */
-		if ( ! isset( $_POST['_snippets_nonce'] ) || ! wp_verify_nonce( $_POST['_snippets_nonce'], __FILE__ ) )
-			return $post_id;
-
-		/* Defaults */
-		$snippet_variables    = ( isset( $_POST['_snippet_variables'] ) ) ? $_POST['_snippet_variables'] : array();
-		$snippet_is_shortcode = ( isset( $_POST['_snippet_is_shortcode'] ) && 'on' == $_POST['_snippet_is_shortcode'] ) ? 'true' : 'false';
-		$snippet_use_content  = ( isset( $_POST['_snippet_use_content'] ) && 'on' == $_POST['_snippet_use_content'] ) ? 'true' : 'false';
-
-		/* Clear any empty variables (variables need a name but not a default value) */
-		foreach ( $snippet_variables as $key => $variable_array ) {
-			if ( empty( $variable_array['variable_name'] ) )
-				unset( $snippet_variables[$key] );
-			else
-				$snippet_variables[$key]['variable_name'] = self::sanitize_variable_name( $variable_array['variable_name'] );
-		}
-
-		update_post_meta( $post_id, '_snippet_variables', $snippet_variables );
-		update_post_meta( $post_id, '_snippet_is_shortcode', $snippet_is_shortcode );
-		update_post_meta( $post_id, '_snippet_use_content', $snippet_use_content );
-
-	}
-
-	/**
 	 * Performs a few metabox related functions for the edit snippet page. 
 	 * 
 	 * @since 1.0
@@ -345,18 +310,61 @@ class Simple_Snippets {
 		<fieldset id="snippet-variables">
 			<?php foreach ( $snippet_variables as $index => $snippet_variable ) : ?>
 			<fieldset class="snippet-variable">
-				<label for="_snippet_variables[<?php echo $index; ?>][variable_name]"><?php _e( 'Variable Name:', self::$text_domain ) ?>
+				<h5><code><?php printf( '{variable_%s}', $index ); ?></code><span class="remove-button hide-if-no-js" title="Delete Variable">Delete Variable</span></h5>
+				<label for="_snippet_variables[<?php echo $index; ?>][variable_name]"><?php _e( 'Description:', self::$text_domain ) ?>
 					<input type="text" name="_snippet_variables[<?php echo $index; ?>][variable_name]" id="_snippet_variables[<?php echo $index; ?>][variable_name]" value="<?php echo $snippet_variable['variable_name']; ?>" />
 				</label>
-				<label for="_snippet_variables[<?php echo $index; ?>][variable_default]"><?php _e( 'Default Value/s:', self::$text_domain ) ?>
+				<label for="_snippet_variables[<?php echo $index; ?>][variable_default]"><?php _e( 'Default Value:', self::$text_domain ) ?>
 					<input type="text" name="_snippet_variables[<?php echo $index; ?>][variable_default]" id="_snippet_variables[<?php echo $index; ?>][variable_default]" value="<?php esc_attr_e( $snippet_variable['variable_default'] ); ?>" />
 				</label>
 			</fieldset>
 			<?php endforeach; ?>
 		</fieldset>
 
+		<input type="hidden" id="snippet_variable_last_index" value="<?php echo key( array_slice( $snippet_variables, -1, 1, TRUE ) ); ?>"/>
 		<input type="button" id="snippet_variable_adder" value="<?php _e( 'Add a Variable', self::$text_domain ); ?>" class="button"/>
 <?php
+	}
+
+	/**
+	 * When a snippet post type is saved, also save the meta associated with the snippet, like the variables 
+	 * and whether the snippet should be used as a shortcode or HTML.
+	 * 
+	 * @param $post_id int The ID of the snippet post the variables should be saved for.
+	 * @since 1.0
+	 */
+	public static function save_snippet_meta( $post_id ) {
+
+		if ( wp_is_post_revision( $post_id ) || wp_is_post_autosave( $post_id ) || ! current_user_can( 'edit_post', $post_id ) )
+			return $post_id;
+
+		/* Meta not submitted */
+		if ( ! isset( $_POST['_snippets_nonce'] ) || ! wp_verify_nonce( $_POST['_snippets_nonce'], __FILE__ ) )
+			return $post_id;
+
+		error_log( '****** in save_snippet_meta ******' );
+		error_log( '$_POST[_snippet_variables] = ' . print_r( $_POST['_snippet_variables'], true ) );
+
+		/* Defaults */
+		$snippet_variables    = ( isset( $_POST['_snippet_variables'] ) ) ? $_POST['_snippet_variables'] : array();
+		$snippet_is_shortcode = ( isset( $_POST['_snippet_is_shortcode'] ) && 'on' == $_POST['_snippet_is_shortcode'] ) ? 'true' : 'false';
+		$snippet_use_content  = ( isset( $_POST['_snippet_use_content'] ) && 'on' == $_POST['_snippet_use_content'] ) ? 'true' : 'false';
+
+		/* Clear any empty variables (variables need a name but not a default value) */
+		foreach ( $snippet_variables as $key => $variable_array ) {
+			if ( empty( $variable_array['variable_name'] ) )
+				unset( $snippet_variables[$key] );
+			else
+				$snippet_variables[$key]['variable_name'] = self::sanitize_variable_name( $variable_array['variable_name'] );
+		}
+
+		error_log( '$snippet_variables = ' . print_r( $snippet_variables, true ) );
+		error_log( '******************************' );
+
+		update_post_meta( $post_id, '_snippet_variables', $snippet_variables );
+		update_post_meta( $post_id, '_snippet_is_shortcode', $snippet_is_shortcode );
+		update_post_meta( $post_id, '_snippet_use_content', $snippet_use_content );
+
 	}
 
 	/**
