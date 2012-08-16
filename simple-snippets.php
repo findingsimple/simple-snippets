@@ -282,7 +282,7 @@ class Simple_Snippets {
 		$snippet_variables = get_post_meta( $post->ID, '_snippet_variables', true );
 
 		if ( empty( $snippet_variables ) )
-			$snippet_variables = array( array( 'variable_name' => '', 'variable_default' => '' ) );
+			$snippet_variables = array( array( 'variable_description' => '', 'variable_default' => '' ) );
 
 ?>
 		<p><?php _e( 'An optional description to display when inserting this snippet.', self::$text_domain ); ?></p>
@@ -311,8 +311,8 @@ class Simple_Snippets {
 			<?php foreach ( $snippet_variables as $index => $snippet_variable ) : ?>
 			<fieldset class="snippet-variable">
 				<h5><code><?php printf( '{variable_%s}', $index ); ?></code><span class="remove-button hide-if-no-js" title="Delete Variable">Delete Variable</span></h5>
-				<label for="_snippet_variables[<?php echo $index; ?>][variable_name]"><?php _e( 'Description:', self::$text_domain ) ?>
-					<input type="text" name="_snippet_variables[<?php echo $index; ?>][variable_name]" id="_snippet_variables[<?php echo $index; ?>][variable_name]" value="<?php echo $snippet_variable['variable_name']; ?>" />
+				<label for="_snippet_variables[<?php echo $index; ?>][variable_description]"><?php _e( 'Description:', self::$text_domain ) ?>
+					<input type="text" name="_snippet_variables[<?php echo $index; ?>][variable_description]" id="_snippet_variables[<?php echo $index; ?>][variable_description]" value="<?php echo $snippet_variable['variable_description']; ?>" />
 				</label>
 				<label for="_snippet_variables[<?php echo $index; ?>][variable_default]"><?php _e( 'Default Value:', self::$text_domain ) ?>
 					<input type="text" name="_snippet_variables[<?php echo $index; ?>][variable_default]" id="_snippet_variables[<?php echo $index; ?>][variable_default]" value="<?php esc_attr_e( $snippet_variable['variable_default'] ); ?>" />
@@ -342,9 +342,6 @@ class Simple_Snippets {
 		if ( ! isset( $_POST['_snippets_nonce'] ) || ! wp_verify_nonce( $_POST['_snippets_nonce'], __FILE__ ) )
 			return $post_id;
 
-		error_log( '****** in save_snippet_meta ******' );
-		error_log( '$_POST[_snippet_variables] = ' . print_r( $_POST['_snippet_variables'], true ) );
-
 		/* Defaults */
 		$snippet_variables    = ( isset( $_POST['_snippet_variables'] ) ) ? $_POST['_snippet_variables'] : array();
 		$snippet_is_shortcode = ( isset( $_POST['_snippet_is_shortcode'] ) && 'on' == $_POST['_snippet_is_shortcode'] ) ? 'true' : 'false';
@@ -352,14 +349,11 @@ class Simple_Snippets {
 
 		/* Clear any empty variables (variables need a name but not a default value) */
 		foreach ( $snippet_variables as $key => $variable_array ) {
-			if ( empty( $variable_array['variable_name'] ) )
+			if ( empty( $variable_array['variable_description'] ) && empty( $variable_array['variable_default'] ) )
 				unset( $snippet_variables[$key] );
 			else
-				$snippet_variables[$key]['variable_name'] = self::sanitize_variable_name( $variable_array['variable_name'] );
+				$snippet_variables[$key]['variable_description'] = $variable_array['variable_description'];
 		}
-
-		error_log( '$snippet_variables = ' . print_r( $snippet_variables, true ) );
-		error_log( '******************************' );
 
 		update_post_meta( $post_id, '_snippet_variables', $snippet_variables );
 		update_post_meta( $post_id, '_snippet_is_shortcode', $snippet_is_shortcode );
@@ -417,7 +411,7 @@ class Simple_Snippets {
 	public static function enqueue_styles_and_scripts() {
 
 		$screen = get_current_screen();
-		
+
 		if ( is_admin() )
 			wp_enqueue_style( 'snippets', self::get_url( '/css/admin.css' ) );
 
@@ -434,42 +428,48 @@ class Simple_Snippets {
 
 				$variable_string = '';
 
-				if ( empty( $snippet->variables ) ) {
+				$snippet_data['variables'][$snippet->shortcode_tag] = array();
 
-					$snippet_data['variables'][$snippet->post_name] = array();
+				if ( $snippet->use_content != 'false' )
+					$snippet_data['variables'][$snippet->shortcode_tag]['_content'] = '';
 
-				} else {
-					/* Build an array of variable names, defaults & a shortcode string for each variable. */
+				/* Build an array of variable names, defaults & a shortcode string for each variable. */
+				if ( ! empty( $snippet->variables ) ) {
 
-					foreach ( $snippet->variables as $key_2 => $variable ) {
+					foreach ( $snippet->variables as $variable_id => $variable ) {
 
-						$snippet_data['variables'][$snippet->post_name][self::sanitize_variable_name( $variable['variable_name'] )] = $variable['variable_default'];
+						$variable_id = sprintf( 'variable_%s', $variable_id );
 
-						$variable_string .= ' ' . self::sanitize_variable_name( $variable['variable_name'] ) . '="{' . self::sanitize_variable_name( $variable['variable_name'] ) . '}"';
+						$snippet_data['variables'][$snippet->shortcode_tag][$variable_id] = array(
+							'description' => $variable['variable_description'],
+							'default'     => $variable['variable_default'],
+						);
+
+						// Add variable description
+						$variable_string .= sprintf( ' %s_description="%s"', $variable_id, addslashes( $variable['variable_description'] ) );
+
+						// Add variable values
+						$variable_string .= sprintf( ' %s="{%s}"', $variable_id, $variable_id );
 					}
-
-					if ( $snippet->use_content != 'false' )
-						$snippet_data['variables'][$snippet->post_name]['_content'] = '';
-
 				}
 
 				if ( $snippet->is_shortcode != 'false' ) {
 
-					$snippet_data['snippetsToInsert'][$snippet->post_name] = '[' . $snippet->post_name . $variable_string . ']';
+					$snippet_data['snippetsToInsert'][$snippet->shortcode_tag] = sprintf( '[%s description="%s"%s]', $snippet->shortcode_tag, addslashes( $snippet->post_title ), $variable_string );
 
 					if ( $snippet->use_content != 'false' )
-						$snippet_data['snippetsToInsert'][$snippet->post_name] .= '{_content}';
+						$snippet_data['snippetsToInsert'][$snippet->shortcode_tag] .= '{_content}';
 
 					// Always close shortcode to future proof against a shortcode being changed to include content (and breaking existing shortcodes without closing tag)
-					$snippet_data['snippetsToInsert'][$snippet->post_name] .= '[/' . $snippet->post_name . ']';
+					$snippet_data['snippetsToInsert'][$snippet->shortcode_tag] .= '[/' . $snippet->shortcode_tag . ']';
 
 				} else {
 
-					$snippet_data['snippetsToInsert'][$snippet->post_name] = str_replace( ']]>', ']]&gt;', apply_filters( 'the_content', $snippet->post_content ) );
+					$snippet_data['snippetsToInsert'][$snippet->shortcode_tag] = str_replace( ']]>', ']]&gt;', apply_filters( 'the_content', $snippet->post_content ) );
 
 				}
 
-				$snippet_data['snippetsToInsert'][$snippet->post_name] = json_encode( $snippet_data['snippetsToInsert'][$snippet->post_name] );
+				$snippet_data['snippetsToInsert'][$snippet->shortcode_tag] = json_encode( $snippet_data['snippetsToInsert'][$snippet->shortcode_tag] );
 
 			}
 
@@ -547,7 +547,7 @@ class Simple_Snippets {
 					<select id="snippet-select" name="snippet-select">
 						<?php foreach ( $snippets as $key => $snippet ) : ?>
 							<?php if ( $screen->id == self::$admin_screen_id && $post_id == $snippet->ID ) continue; // don't add the snippet to itself ?>
-							<option value="#snippet-tab-<?php echo $snippet->post_name; ?>"><?php echo $snippet->post_title; ?></option>
+							<option value="#snippet-tab-<?php echo $snippet->shortcode_tag; ?>"><?php echo $snippet->post_title; ?></option>
 						<?php endforeach; ?>
 					</select>
 				</label>
@@ -555,26 +555,25 @@ class Simple_Snippets {
 			<ul>
 			<?php foreach ( $snippets as $key => $snippet ) : ?>
 				<?php if ( $screen->id == self::$admin_screen_id && $post_id == $snippet->ID ) continue; // don't add the snippet to itself ?>
-				<li><a href="#snippet-tab-<?php echo $snippet->post_name; ?>"><?php echo $snippet->post_title; ?></a></li>
+				<li><a href="#snippet-tab-<?php echo $snippet->shortcode_tag; ?>"><?php echo $snippet->post_title; ?></a></li>
 			<?php endforeach; ?>
 			</ul>
 
 			<?php foreach ( $snippets as $key => $snippet ) : ?>
 			<?php if ( $screen->id == self::$admin_screen_id && $post_id == $snippet->ID ) continue; // don't add the snippet to itself ?>
-			<div id="snippet-tab-<?php echo $snippet->post_name; ?>" class="snippet-tab">
+			<div id="snippet-tab-<?php echo $snippet->shortcode_tag; ?>" class="snippet-tab">
 
 				<?php if ( ! empty( $snippet->post_excerpt ) ) : ?>
 				<p class="howto"><?php echo $snippet->post_excerpt; ?></p>
 				<?php endif; ?>
 
-				<?php foreach ( $snippet->variables as $key_2 => $variable ) : ?>
+				<?php foreach ( $snippet->variables as $variable_id => $variable ) : ?>
 
-				<?php $variable_id    = $snippet->post_name . '_' . self::sanitize_variable_name( $variable['variable_name'] ); ?>
-				<?php $variable_label = ucwords( str_replace( '_', ' ', $variable['variable_name'] ) ); ?>
+				<?php $variable_id = sprintf( '%s_variable_%s', $snippet->shortcode_tag, $variable_id ); ?>
 
 				<?php if ( 1 == preg_match( '/^\{.*?\}$/', $variable['variable_default'] ) ) : // We want a select box ?>
 				<div class="select-wrap">
-				<label for="<?php echo $variable_id; ?>" class="select"><?php echo $variable_label; ?>:</label>
+				<label for="<?php echo $variable_id; ?>" class="select"><?php echo $variable['variable_description']; ?>:</label>
 				<select id="<?php echo $variable_id; ?>" name="<?php echo $variable_id; ?>">
 					<?php foreach ( explode( ',', substr( $variable['variable_default'], 1, -1 ) ) as $value ) : ?>
 					<option value="<?php echo $value; ?>"><?php echo $value; ?></option>
@@ -582,14 +581,14 @@ class Simple_Snippets {
 				</select>
 				</div>
 				<?php else : ?>
-				<label for="<?php echo $variable_id; ?>"><?php echo $variable_label; ?>:
+				<label for="<?php echo $variable_id; ?>"><?php echo $variable['variable_description']; ?>:
 					<input type="text" id="<?php echo $variable_id; ?>" name="<?php echo $variable_id; ?>" value="<?php esc_attr_e( $variable['variable_default'] ); ?>" />
 				</label>
 				<?php endif; ?>
 				<?php endforeach; ?>
 				<?php if ( $snippet->use_content != 'false' ) : ?>
-				<label for="<?php echo $snippet->post_name . '__content'; ?>" class="snippet-content"><?php _e( 'Content:', self::$text_domain ); ?>
-					<textarea id="<?php echo $snippet->post_name . '__content'; ?>" name="<?php echo $snippet->post_name . '__content'; ?>"></textarea>
+				<label for="<?php echo $snippet->shortcode_tag . '__content'; ?>" class="snippet-content"><?php _e( 'Content:', self::$text_domain ); ?>
+					<textarea id="<?php echo $snippet->shortcode_tag . '__content'; ?>" name="<?php echo $snippet->shortcode_tag . '__content'; ?>"></textarea>
 				</label>
 				<?php endif; ?>
 			</div><!-- #ps-tabs-<?php echo $key; ?> -->
@@ -616,7 +615,7 @@ class Simple_Snippets {
 		foreach ( $snippets as $snippet ) {
 			// If shortcode is enabled for the snippet, and a snippet has been entered, register it as a shortcode.
 			if ( ! empty( $snippet->post_content ) && $snippet->is_shortcode !== 'false' )
-				add_shortcode( $snippet->post_name, array( __CLASS__, 'shortcode_callback' ) );
+				add_shortcode( $snippet->shortcode_tag, array( __CLASS__, 'shortcode_callback' ) );
 		}
 	}
 
@@ -631,8 +630,13 @@ class Simple_Snippets {
 
 		$shortcode_symbols = array();
 
-		foreach( $snippets[$callback]->variables as $variable )
-			$shortcode_symbols[$variable['variable_name']] = $variable['variable_default'];
+		foreach( $snippets[$callback]->variables as $variable_id => $variable ) {
+			$variable_id = sprintf( 'variable_%s', $variable_id );
+			$shortcode_symbols[$variable_id] = array(
+				'description' => $variable['variable_description'],
+				'default'     => $variable['variable_default']
+			);
+		}
 
 		extract( shortcode_atts( $shortcode_symbols, $atts ) );
 
@@ -640,7 +644,7 @@ class Simple_Snippets {
 
 		$snippet = str_replace( "&", "&amp;", addslashes( $snippets[$callback]->post_content ) );
 
-		$_content = remove_wpautop( $_content );
+		$_content = self::remove_wpautop( $_content );
 
 		// Get the first <p> tag to make sure it's an opening tag, if it is a closing tag, prepend an opening tag, works around a bug in wpautop()
 		if ( preg_match( '/<(\/?)p("[^"]*"|\'[^\']*\'|[^\'">r])*>/', $_content, $matches ) )
@@ -680,29 +684,18 @@ class Simple_Snippets {
 
 			foreach ( $snippet_posts as $key => $snippet ) {
 
-				self::$snippets[$snippet->post_name] = $snippet;
+				$snippet_tag = sprintf( 'snippet_%s', $snippet->ID );
 
-				self::$snippets[$snippet->post_name]->variables    = get_post_meta( $snippet->ID, '_snippet_variables', true );
-				self::$snippets[$snippet->post_name]->is_shortcode = get_post_meta( $snippet->ID, '_snippet_is_shortcode', true );
-				self::$snippets[$snippet->post_name]->use_content  = get_post_meta( $snippet->ID, '_snippet_use_content', true );
+				self::$snippets[$snippet_tag] = $snippet;
+				self::$snippets[$snippet_tag]->shortcode_tag = $snippet_tag;
+				self::$snippets[$snippet_tag]->variables     = get_post_meta( $snippet->ID, '_snippet_variables', true );
+				self::$snippets[$snippet_tag]->is_shortcode  = get_post_meta( $snippet->ID, '_snippet_is_shortcode', true );
+				self::$snippets[$snippet_tag]->use_content   = get_post_meta( $snippet->ID, '_snippet_use_content', true );
 			}
 
 		}
 
 		return self::$snippets;
-	}
-
-	/**
-	 * Returns an array of all snippets with their variables and post data.
-	 *
-	 * @since 1.0
-	 * @return array $post_name => $post_content
-	 */
-	public static function sanitize_variable_name( $variable_name ) {
-
-		$variable_name = str_replace( array( ' ', '-', '.', '*', '@' ), '_', sanitize_user( strtolower( $variable_name ), true ) );
-
-		return $variable_name;
 	}
 
 	/**
@@ -742,7 +735,7 @@ class Simple_Snippets {
 	 * @author Brent Shepherd <brent@findingsimple.com>
 	 * @since 1.0
 	 */
-	function set_correct_snippet_messages( $messages ) {
+	public static function set_correct_snippet_messages( $messages ) {
 		global $post, $post_ID;
 
 		$snippet_object = get_post_type_object( self::$post_type_name );
@@ -762,6 +755,20 @@ class Simple_Snippets {
 		);
 
 		return $messages;
+	}
+
+	/**
+	 * Removes markup added by the WordPress wpautop function.
+	 *
+	 * @author Brent Shepherd <brent@findingsimple.com>
+	 * @since 1.0
+	 */
+	public static function remove_wpautop( $content ) {
+
+		$content = do_shortcode( shortcode_unautop( $content ) ); 
+		$content = preg_replace( '#^<\/p>|^<br \/>|<p>$#', '', $content);
+
+		return $content;
 	}
 
 	/* Help tabs */

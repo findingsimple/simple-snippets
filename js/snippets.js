@@ -15,13 +15,12 @@ jQuery(document).ready(function($){
 					$(this).dialog("close");
 				},
 				Insert: function() {
-					var snippetName = $('#snippet-select').val().replace('#snippet-tab-',''),
-						snippetToInsert = SnippetData.snippetsToInsert[snippetName];
+					var snippetTag = $('#snippet-select').val().replace('#snippet-tab-',''),
+						snippetToInsert = SnippetData.snippetsToInsert[snippetTag];
 
 					$(this).dialog("close");
-
-					$.each(SnippetData.variables[snippetName],function(name,value){
-						snippetToInsert = snippetToInsert.replace('{'+name+'}',escapeToJSON(escapeToJSON($('#'+snippetName+'_'+name).val())));
+					$.each(SnippetData.variables[snippetTag],function(name,value){
+						snippetToInsert = snippetToInsert.replace('{'+name+'}',escapeToJSON(escapeToJSON($('#'+snippetTag+'_'+name).val())));
 					});
 
 					snippetToInsert = $.parseJSON(snippetToInsert);
@@ -64,7 +63,7 @@ jQuery(document).ready(function($){
 		newFieldset.find('h5 code').text(lastHeaderText.replace(lastIndexRegex,nextVarIndex));
 
 		// Update the attributes
-		$.each(['variable_name','variable_default'],function(index,keyName){
+		$.each(['variable_description','variable_default'],function(index,keyName){
 			newFieldset.find('[name="_snippet_variables['+lastVarIndex+']['+keyName+']"]').attr({
 				'id': '_snippet_variables['+nextVarIndex+']['+keyName+']',
 				'name': '_snippet_variables['+nextVarIndex+']['+keyName+']'
