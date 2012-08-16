@@ -301,7 +301,7 @@ class Simple_Snippets {
 
 			<label for="_snippet_use_content">
 				<input type="checkbox" name="_snippet_use_content" id="_snippet_use_content" <?php checked( $use_content, 'true' ); ?>/>
-				<?php _e( 'Allow content in the snippet shortcode', self::$text_domain ) ?>
+				<?php printf( __( 'Use built-in %s variable in the snippet shortcode', self::$text_domain ), '<code>{_content}</code>' ); ?>
 			</label>
 		</div>
 
