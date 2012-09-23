@@ -250,7 +250,11 @@ class Simple_Snippets {
 		}
 
 		// Redirect so that new capabilities are applied correctly
-		$location = admin_url( 'options-general.php?page=snippet_settings&updated=1' );
+		$location = wp_get_referer();
+
+		if ( empty( $location ) )
+			$location =  admin_url( 'options-general.php?page=snippet_settings&updated=1' );
+
 		wp_safe_redirect( $location );
 		exit;
 	}
