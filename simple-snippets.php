@@ -83,7 +83,7 @@ class Simple_Snippets {
 
 		add_action( 'admin_menu', array( __CLASS__, 'add_settings_page' ) );
 
-		add_action( 'admin_init', array( __CLASS__, 'set_and_save_settings' ) );
+		add_action( 'admin_init', array( __CLASS__, 'set_and_save_settings' ), 20 );
 
 		// In context help 
 		add_action( 'load-post.php', array( __CLASS__, 'add_help_tabs' ) );
