@@ -635,7 +635,7 @@ class Simple_Snippets {
 
 		$attributes = compact( array_keys( $shortcode_symbols ) );
 
-		$snippet = str_replace( "&", "&amp;", addslashes( apply_filters( 'the_content', $snippets[$callback]->post_content ) ) );
+		$snippet = str_replace( "&", "&amp;", addslashes( $snippets[$callback]->post_content ) );
 
 		$_content = remove_wpautop( $_content );
 
