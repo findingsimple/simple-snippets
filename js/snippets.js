@@ -39,10 +39,12 @@ jQuery(document).ready(function($){
 		});
 	});
 
-	QTags.addButton('simple_snippets_id','snippet',function(){
-		snippets_caller = 'html';
-		jQuery('#snippets-dialog').dialog('open');
-	});
+	if ( typeof QTags != 'undefined' ) {
+		QTags.addButton('simple_snippets_id','snippet',function(){
+			snippets_caller = 'html';
+			jQuery('#snippets-dialog').dialog('open');
+		});
+	}
 
 	toggleUseContent();
 
