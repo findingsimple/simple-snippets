@@ -85,8 +85,9 @@ class Simple_Snippets {
 
 		add_action( 'admin_init', array( __CLASS__, 'set_and_save_settings' ), 20 );
 
-		// In context help 
+		// In context help
 		add_action( 'load-post.php', array( __CLASS__, 'add_help_tabs' ) );
+
 		add_action( 'load-post-new.php', array( __CLASS__, 'add_help_tabs' ) );
 	}
 
@@ -649,15 +650,13 @@ class Simple_Snippets {
 				$_content = $_content . '</p>';
 
 		// Add enclosed content to variables
-		$attributes['_content'] = $_content;
+		$attributes['_content'] = wpautop( $_content );
 
 		foreach ( $attributes as $variable_name => $variable_value )
 			$snippet = str_replace( "{".$variable_name."}", $variable_value, $snippet );
 
 		// Strip escaping and execute nested shortcodes
 		$snippet = do_shortcode( stripslashes( $snippet ) );
-
-		$snippet = wpautop( $snippet );
 
 		return $snippet;
 	}
