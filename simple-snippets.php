@@ -583,7 +583,7 @@ class Simple_Snippets {
 				</label>
 				<?php endif; ?>
 				<?php endforeach; ?>
-				<?php if ( $snippet->use_content != 'false' ) : ?>
+				<?php if ( 'true' == $snippet->is_shortcode && $snippet->use_content != 'false' ) : ?>
 				<label for="<?php echo $snippet->post_name . '__content'; ?>" class="snippet-content"><?php _e( 'Content:', self::$text_domain ); ?>
 					<textarea id="<?php echo $snippet->post_name . '__content'; ?>" name="<?php echo $snippet->post_name . '__content'; ?>"></textarea>
 				</label>
