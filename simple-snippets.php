@@ -462,8 +462,7 @@ class Simple_Snippets {
 
 				} else {
 
-					$snippet_data['snippetsToInsert'][$snippet->post_name] = str_replace( ']]>', ']]&gt;', apply_filters( 'the_content', $snippet->post_content ) );
-
+					$snippet_data['snippetsToInsert'][$snippet->post_name] = str_replace( ']]>', ']]&gt;', $snippet->post_content );
 				}
 
 				$snippet_data['snippetsToInsert'][$snippet->post_name] = json_encode( $snippet_data['snippetsToInsert'][$snippet->post_name] );
