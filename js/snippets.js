@@ -28,8 +28,26 @@ jQuery(document).ready(function($){
 
 					// HTML editor
 					if (snippets_caller == 'html') {
+
 						QTags.insertContent(snippetToInsert);
+
 					} else {
+
+						// Replace any raw tags with placeholder image
+						if (/([\s\S]*?)(\[raw\]|<!--raw-->|<!--start_raw-->)([\s\S]*?)/gi.test(snippetToInsert)) {
+							var placeholderSrc = rawhtml_placeholder_image, // This should be set if [raw] content exists
+								placeholderClass = 'raw-html-placeholder',
+								placeholderTitle = 'Switch to HTML mode to edit this code';
+
+							// Replace any <!--raw--> content in the snippet
+							snippetToInsert = snippetToInsert.replace(
+								/(\[raw\]|<!--raw-->|<!--start_raw-->)([\s\S]*?)(\[\/raw\]|<!--\/raw-->|<!--end_raw-->)/gi,
+								function(content){ // NB: content is stored in alt attribute
+									return '<img alt="'+escape(content)+'" class="'+placeholderClass+' mceItemNoResize" title="'+placeholderTitle+'" src="'+placeholderSrc+'" />';
+								}
+							);
+						}
+
 						// Visual Editor
 						snippets_canvas.execCommand('mceInsertContent', false, snippetToInsert);
 					}
