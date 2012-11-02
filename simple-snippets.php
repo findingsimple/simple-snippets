@@ -666,11 +666,11 @@ class Simple_Snippets {
 	 * @since 1.0
 	 * @return array $post_name => $post object + variables
 	 */
-	public static function get_snippets(){
+	public static function get_snippets() {
 
 		if ( empty( self::$snippets ) ) {
 
-			$snippet_posts = get_posts( array( 'post_type' => self::$post_type_name ) );
+			$snippet_posts = get_posts( array( 'post_type' => self::$post_type_name, 'numberposts' => -1 ) );
 
 			foreach ( $snippet_posts as $key => $snippet ) {
 
